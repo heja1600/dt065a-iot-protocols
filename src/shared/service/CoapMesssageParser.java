@@ -230,9 +230,7 @@ public class CoapMesssageParser {
         var deltaOption = (firstByte & 0xf0) >> 4; // 1111 0000
         
         int optionNumber;
-        System.out.println("Preceding Delta Option: " + precedingDeltaOption);
-        System.out.println("precedingOptionNumber: " + precedingOptionNumber);
-        System.out.println("deltaOption: " + precedingOptionNumber);
+
         /** If its same type of option as previous, use previous option delta*/
         var sameOptionNumber = false;
         if(deltaOption == 0) {
@@ -311,6 +309,11 @@ public class CoapMesssageParser {
 
 
     public static void printCoapMessage(CoapMessage coapMessage) {
+        CoapMesssageParser parser = new CoapMesssageParser();
+        byte [] bytes = parser.createCoapMessage(coapMessage);
+        System.out.println("Bits: \n");
+        ByteUtil.printBytesAsString(bytes);
+        System.out.println("\n");
         System.out.println("Coap code is: " + coapMessage.getCode());
         System.out.println("Coap version is: " + coapMessage.getVersion());
         System.out.println("Coap type is: " + coapMessage.getType());

@@ -27,10 +27,12 @@ public class Program {
         TOKEN(3),
         VERSION(4),
         CODE(5),
-        TYPE(6),
-        OPTIONS(7),
-        HOSTNAME(8),
-        EXIT(9);
+        OPTIONS(6),
+        HOSTNAME(7),
+        PORT(8),
+        EXIT(9),
+        TYPE(10);
+
         Integer value;
 
         ProgramOption(Integer value) {
@@ -99,6 +101,10 @@ public class Program {
                 } 
                 case HOSTNAME: {
                     setHostname();
+                    break;
+                } 
+                case PORT: {
+                    setPort();
                     break;
                 } 
                 case TOKEN: {
@@ -253,6 +259,19 @@ public class Program {
         }
     }
 
+    void setPort() {
+        while(true) {
+            clearScreen();
+            try {
+                System.out.println("Skriv ett port, tidigare värde: " + port);
+                port = Integer.parseInt(reader.readLine());
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     void setToken() {
         while(true) {
             clearScreen();
@@ -310,7 +329,7 @@ public class Program {
         } catch(Exception e) {
             e.printStackTrace();
         }
-        pressKeyContinue();
+        pressKeyContinue(); 
     }
 
     void pressKeyContinue() {
