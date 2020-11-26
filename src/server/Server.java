@@ -9,7 +9,7 @@ import java.net.Socket;
 import server.listeners.OnMessageRetrieved;
 import server.service.MessageHandler;
 import shared.config.ServerConfig;
-import shared.model.CoapMessage;
+import shared.model.coap.CoapMessage;
 import shared.service.CoapMesssageParser;
 
 public class Server extends Thread {
@@ -32,8 +32,6 @@ public class Server extends Thread {
     }
     @Override
     public void run() {
-
-
         runServer = true;
 
         while(runServer) {
@@ -45,7 +43,6 @@ public class Server extends Thread {
                 byte [] buffer = new byte[this.packetSize];
                 inputStream.read(buffer);
         
-                System.out.println("Server recieved packet");
                 CoapMessage message = coapMesssageParser.parseCoapMessage(buffer);
                 onMessageRetrieved.onMessageRetrieved(message);
 
