@@ -1,5 +1,7 @@
 package shared.util;
 
+import java.math.BigInteger;
+
 public class ByteUtil {
     public static int bitToDec(String binaryString) {
         int decimal = Integer.parseInt(binaryString, 2);  
@@ -17,6 +19,23 @@ public class ByteUtil {
             }
         }
         return builder.toString();
+    }
+
+    public static byte [] integerToByteArray(Integer value) {
+        BigInteger bigInt = BigInteger.valueOf(value);
+        return bigInt.toByteArray();
+    }
+
+    public static byte [] stringToByteArray(String value) {
+        return value.getBytes();
+    }
+
+    public static Integer byteArrayToInteger(byte [] bytes) {
+        return new BigInteger(bytes).intValue();
+    }
+
+    public static String byteArrayToString(byte [] bytes) {
+        return new String(bytes);
     }
 
     public static void printBytesAsString(byte [] bytes) {

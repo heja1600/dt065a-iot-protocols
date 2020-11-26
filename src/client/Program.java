@@ -2,63 +2,145 @@ package client;
 
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import shared.config.ServerConfig;
-import shared.model.CoapCode;
-import shared.model.CoapMessage;
+import java.util.HashMap;
+import java.util.Map;
 
+import shared.config.ServerConfig;
+import shared.model.coap.CoapCode;
+import shared.model.coap.CoapMessage;
+import shared.model.coap.CoapType;
+import shared.model.coap.option.AbstractCoapOption;
+import shared.model.coap.option.CoapOptionNumberEnum;
 import shared.service.CoapMesssageParser;
+import shared.service.CoapOptionResolver;
 import shared.util.ByteUtil;
 
+/** Very simple program to test the Coap Server */
 public class Program {
+
+    public enum ProgramOption {
+        SEND(0),
+        PREVIEW(1),
+        PAYLOAD(2),
+        TOKEN(3),
+        VERSION(4),
+        CODE(5),
+        TYPE(6),
+        OPTIONS(7),
+        HOSTNAME(8),
+        EXIT(9);
+        Integer value;
+
+        ProgramOption(Integer value) {
+            this.value = value;
+        }
+        public Integer get() {
+            return this.value;
+        }
+    
+        //Lookup table
+        private static final Map<Integer, ProgramOption> lookup = new HashMap<>();
+    
+        //Populate the lookup table on loading time
+        static
+        {
+            for(ProgramOption env : ProgramOption.values())
+            {
+                lookup.put(env.get(), env);
+            }
+        }
+        
+        //This method can be used for reverse lookup purpose
+        public static ProgramOption get(Integer value) 
+        {
+            return lookup.get(value);
+        }
+    }
+    CoapMessage coapMessage;
     boolean runProgram = true;
     String hostname = "localhost";
     int port = ServerConfig.SERVER_PORT;
     BufferedReader reader;
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         new Program();
     }
 
-    Program() {
+    Program() throws Exception {
         reader = new BufferedReader(new InputStreamReader(System.in));
         startProgram();
     }
 
 
-    void startProgram() {
+    void startProgram() throws Exception {
+        coapMessage = new CoapMessage()
+            .setPayload("This is a payload")
+            .setToken("A token")
+            .setMessageId(0xff);
+
         while(runProgram) {
-            CoapMessage message = new CoapMessage();
-            message.setCoapCode(getCoapCode());
-            System.out.println(message.getCoapCode().get());
-            message.setUriPath(getCoapUriPath());
-            sendMessage(message);
+            clearScreen();
+            ProgramOption option = getProgramOption();
+            switch(option) {
+                case SEND: {
+                    sendMessage(coapMessage);
+                    break;
+                } 
+                case PREVIEW: {
+                    clearScreen();
+                    CoapMesssageParser.printCoapMessage(coapMessage);
+                    pressKeyContinue();
+                    break;
+                } 
+                case PAYLOAD: {
+                    setPayload();
+                    break;
+                } 
+                case HOSTNAME: {
+                    setHostname();
+                    break;
+                } 
+                case TOKEN: {
+                    setToken();
+                    break;
+                } 
+                case VERSION: {
+                    setVersion();
+                    break;
+                } 
+                case CODE: {
+                    setCode();
+                    break;
+                } 
+                case TYPE: {
+                    setType();
+                    break;
+                } 
+                case OPTIONS: {
+                    CoapOptionNumberEnum optionNumber = getOptionNumber();
+                    setOptionValue(optionNumber);
+                    break;
+                } 
+                case EXIT: {
+                    runProgram = false;
+                } 
+            }
         }
     }
+    
 
-    CoapCode getCoapCode() {
+
+
+    ProgramOption getProgramOption() {
         while(true) {
             try {
-                System.out.print("Choose CoAP method \n 1. GET \n 2. POST \n 3. PUT \n 4. DELETE \n");
-                Integer inputCoapCode = Integer.parseInt(reader.readLine());
-                switch(inputCoapCode) {
-                    case 1: {
-                        return CoapCode.GET;  
-                    }
-                    case 2: {
-                        return CoapCode.POST;
-                    } 
-                    case 3: {
-                        return CoapCode.PUT;
-                    }
-                    case 4: {
-                        return CoapCode.DELETE;
-                    }
-                    default : {
-                        System.out.println("Choose number between 1-4 \n");
-                    }
+                ProgramOption [] options =  ProgramOption.values();
+                System.out.println("Välj ett alternativ:");
+                for(int i = 0; i <  options.length; i++) {
+                    System.out.println(i + "." + options[i]);
                 }
+                return options[Integer.parseInt(reader.readLine())];
 
             } catch(Exception e) {
                 e.printStackTrace();
@@ -67,20 +149,159 @@ public class Program {
     }
 
 
-    String getCoapUriPath() {
+    CoapOptionNumberEnum getOptionNumber() {
         while(true) {
             try {
-                System.out.print("Choose path: \n");
-                String uriPath = reader.readLine();
-                if(uriPath != null) {
-                    return uriPath;
+                clearScreen();
+                CoapOptionNumberEnum [] options =  CoapOptionNumberEnum.values();
+                System.out.println("Välj ett alternativ:");
+                for(int i = 0; i <  options.length; i++) {         
+                    System.out.println(i + "." + options[i] + (CoapOptionResolver.isAvailable(options[i]) ? "" : " - NOT IMPLEMENTED"));
                 }
+                int index = Integer.parseInt(reader.readLine());
+                if(CoapOptionResolver.isAvailable(options[index])) {
+                    return options[index];
+                }
+
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
     }
+
+    void setOptionValue(CoapOptionNumberEnum optionNumber) {
+        while(true) {
+            try {
+       
+                System.out.println("Välje värde för option: " + optionNumber);
+
+                String optionValue = reader.readLine();
+                byte [] optionValueInBytes;
+                if(CoapOptionResolver.resolveType(optionNumber) == Integer.class) {
+                    optionValueInBytes = ByteUtil.integerToByteArray(Integer.parseInt(optionValue));
+                } else {
+                    optionValueInBytes = ByteUtil.stringToByteArray(optionValue);
+                }
+                AbstractCoapOption<?> coapOption = CoapOptionResolver.resolveOption(optionNumber, optionValueInBytes);
+
+                if(
+                    !coapOption.isRepetable() 
+                    && coapMessage.getOptions().containsKey(optionNumber)
+                    && !coapMessage.getOptions().get(optionNumber).isEmpty()
+                ) {
+                    System.out.println("The value is already registered and can only be registered once");
+                    System.out.println("1. Remove previous value");
+                    System.out.println("2. Ovveride value");
+                    System.out.println("3. Avbryt");
+                    int choice = Integer.parseInt(reader.readLine());
+
+                    if(choice == 1) {
+                        coapMessage.getOptions().put(optionNumber, null);
+                    } else if(choice  == 2) {
+                        coapMessage.getOptions().put(optionNumber, null);
+                        coapMessage.addOption(coapOption);
+                    }
+                } else {
+                    coapMessage.addOption(coapOption);
+                }
+                
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    void setType() {
+        while(true) {
+            try {
+                clearScreen();
+                CoapType [] types =  CoapType.values();
+                System.out.println("Välj ett alternativ, tidigare värde: " + coapMessage.getCode());
+                for(int i = 0; i <  types.length; i++) {
+                    System.out.println(i + "." + types[i]);
+                }
+                coapMessage.setType(CoapType.get(Integer.parseInt(reader.readLine())));
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    void setVersion() {
+        while(true) {
+            clearScreen();
+            try {
+                System.out.println("Sätt version 0-3, tidigare värde: " + coapMessage.getVersion());
+                coapMessage.setVersion(Integer.parseInt(reader.readLine()));
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void setHostname() {
+        while(true) {
+            clearScreen();
+            try {
+                System.out.println("Skriv ett hostname, tidigare värde: " + hostname);
+                hostname = reader.readLine();
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void setToken() {
+        while(true) {
+            clearScreen();
+            try {
+                System.out.println("Ange token för meddelande, tidagare värde: " + coapMessage.getToken());
+                coapMessage.setToken(reader.readLine());
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void setPayload() {
+        while(true) {
+            clearScreen();
+            try {
+                System.out.println("Ange payload för meddelande, tidagare värde: " + coapMessage.getPayload());
+                coapMessage.setPayload(reader.readLine());
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
+    void setCode() {
+        while(true) {
+            clearScreen();
+            try {
+                CoapCode [] codes =  CoapCode.values();
+                System.out.println("Välj ett alternativ, tidigare värde: " + coapMessage.getCode());
+                for(int i = 0; i <  codes.length; i++) {
+                    System.out.println(i + "." + codes[i]);
+                }
+
+                coapMessage.setCode(CoapCode.get(Integer.parseInt(reader.readLine())));
+                break;
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     void sendMessage(CoapMessage coapMessage) {
+        clearScreen();
         CoapMesssageParser parser = new CoapMesssageParser();
         try (var socket = new Socket(hostname, port)) {
             byte [] packet = parser.createCoapMessage(coapMessage);
@@ -89,5 +310,21 @@ public class Program {
         } catch(Exception e) {
             e.printStackTrace();
         }
+        pressKeyContinue();
+    }
+
+    void pressKeyContinue() {
+        System.out.println("Press Enter key to continue...");
+        try
+        {
+            reader.readLine();
+        }  
+        catch(Exception e)
+        {}  
+    }
+
+    void clearScreen() {
+        System.out.print("\033[H\033[2J");  
+        System.out.flush();  
     }
 }

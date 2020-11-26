@@ -1,25 +1,25 @@
-package shared.model;
+package shared.model.coap;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public enum CoapCode {
 
-    GET((byte)1),
-    POST((byte)2),
-    PUT((byte)3),
-    DELETE((byte)4),
+    GET(1),
+    POST(2),
+    PUT(3),
+    DELETE(4),
 
-    BAD_REQUEST((byte)128);
+    BAD_REQUEST(128);
 
-    private byte coapCoade;
+    private int coapCoade;
 
-    private CoapCode(byte coapCoade)  {
+    private CoapCode(int coapCoade)  {
         this.coapCoade = coapCoade;
     }
 
     
-    public byte get() {
+    public int get() {
         return this.coapCoade;
     }
 
@@ -36,7 +36,7 @@ public enum CoapCode {
     }
     
     //This method can be used for reverse lookup purpose
-    public static CoapCode get(byte coapCode) 
+    public static CoapCode get(int coapCode) 
     {
         return lookup.get("" + coapCode);
     }

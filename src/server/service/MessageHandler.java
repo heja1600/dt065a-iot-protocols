@@ -1,18 +1,18 @@
 package server.service;
 
-import shared.model.*;
+import shared.model.coap.CoapMessage;
 
 public class MessageHandler {
     public MessageHandler() {
 
     }
     public void handleMessage(CoapMessage message) {
-        if(message.getCoapCode() == null) {
+        if(message.getCode() == null) {
             System.out.println("Tomt message");
             return;
         }
-        System.out.println("Inkommande message");
-        switch(message.getCoapCode()) {
+
+        switch(message.getCode()) {
             case GET: {
                 break;		
             }

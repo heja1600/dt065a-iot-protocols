@@ -3,7 +3,7 @@ package server;
 
 import server.listeners.OnMessageRetrieved;
 import server.service.MessageHandler;
-import shared.model.CoapMessage;
+import shared.model.coap.CoapMessage;
 
 public class Program implements OnMessageRetrieved {
     Server server;
