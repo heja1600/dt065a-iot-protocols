@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import shared.model.coap.CoapCode;
 import shared.model.coap.CoapMessage;
+import shared.model.coap.CoapOptionExtended;
 import shared.model.coap.CoapType;
 import shared.model.coap.option.AbstractCoapOption;
 import shared.model.coap.option.CoapOptionNumberEnum;
@@ -15,42 +16,7 @@ import shared.util.ByteUtil;
 
 
 public class CoapMesssageParser {
-    private enum OptionExtended {
-        ZERO(0),
-        ONE_BYTE(1),
-        TWO_BYTES(2);
-        private Integer extended;
-        OptionExtended(Integer extended){
-            this.extended = extended;
-        }
-    }
-    private Integer getFourBitCode(OptionExtended optionExtended, Integer number) throws Exception {
-        switch(optionExtended) {
-            case ZERO: {
-                return number;
-            }
-            case ONE_BYTE: {
-                return 13;
-            }
-            case TWO_BYTES: {
-                return 14;
-            }
-            default: {
-                throw new Exception("Four bit code could not be represented from: " + optionExtended);
-            }
-        }
-    }
-
-    private OptionExtended getOptionExtended(Integer number) throws Exception{
-        if(number > 0xff) {
-            throw new Exception("Couldnt get OptionExtended from number: " + number);
-        }
-        return number <= 12 
-        ? OptionExtended.ZERO
-        : number <= 0xff
-        ? OptionExtended.ONE_BYTE
-        : OptionExtended.TWO_BYTES;
-    }
+  
 
     /**
      * 
@@ -126,16 +92,20 @@ public class CoapMesssageParser {
         byte [] optionValue = optionValueToBytes(firstOption);
 
         /** Option delta & Option length  */
-        OptionExtended deltaExtended = getOptionExtended(optionDelta);
-        OptionExtended lengthExtended = getOptionExtended(optionValue.length);
-        byteArrayOutputStream.write((getFourBitCode(deltaExtended, optionDelta) << 4) | getFourBitCode(lengthExtended, optionValue.length));
+        CoapOptionExtended deltaExtended = CoapOptionExtended.getOptionExtended(optionDelta);
+        CoapOptionExtended lengthExtended = CoapOptionExtended.getOptionExtended(optionValue.length);
+
+        byteArrayOutputStream.write((
+            CoapOptionExtended.getFourBitCode(deltaExtended, optionDelta) << 4) 
+            | CoapOptionExtended.getFourBitCode(lengthExtended, optionValue.length)
+        );
 
         /** Give Option delta more space if it needs it*/
-        if(deltaExtended != OptionExtended.ZERO) {
+        if(deltaExtended != CoapOptionExtended.ZERO_BYTES) {
             byteArrayOutputStream.write(ByteUtil.integerToByteArray(optionDelta));
         }
 
-        if(lengthExtended != OptionExtended.ZERO) {
+        if(lengthExtended != CoapOptionExtended.ZERO_BYTES) {
             byteArrayOutputStream.write(ByteUtil.integerToByteArray(optionValue.length));
         }
 
@@ -146,9 +116,9 @@ public class CoapMesssageParser {
         while(options.hasNext()) {
             var option = options.next();
             optionValue = optionValueToBytes(option);
-            lengthExtended = getOptionExtended(optionValue.length);
-            byteArrayOutputStream.write(getFourBitCode(lengthExtended, optionValue.length));
-            if(lengthExtended != OptionExtended.ZERO) {
+            lengthExtended = CoapOptionExtended.getOptionExtended(optionValue.length);
+            byteArrayOutputStream.write(CoapOptionExtended.getFourBitCode(lengthExtended, optionValue.length));
+            if(lengthExtended != CoapOptionExtended.ZERO_BYTES) {
                 byteArrayOutputStream.write(ByteUtil.integerToByteArray(optionValue.length));
             }
             byteArrayOutputStream.write(optionValue);
