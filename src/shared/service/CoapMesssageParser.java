@@ -41,10 +41,10 @@ public class CoapMesssageParser {
                 int coapMethod = coapMessage.getCode().get();
                 byteArrayOutputStream.write(coapMethod);
             }
-
+  
             /** Set message id */
-            byteArrayOutputStream.write(coapMessage.getMessageId() & 0xf0 >> 0xf);
-            byteArrayOutputStream.write((coapMessage.getMessageId() & 0xf));
+            byteArrayOutputStream.write((coapMessage.getMessageId() & 0xff00) >> 8);
+            byteArrayOutputStream.write(coapMessage.getMessageId() & 0xff);
             
             /** Set Token */
             if(coapMessage.getToken() != null) {

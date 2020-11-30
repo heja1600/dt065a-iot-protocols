@@ -77,7 +77,7 @@ public class CoapMessage {
 
     public CoapMessage setMessageId(int messageId) throws Exception{
         if(messageId < 0x00 || messageId > 0xffff) {
-            throw new Exception("Message id maximum length is 2 bytes");
+            throw new Exception("Message id maximum length is 2 bytes, messageId: " + messageId);
         }
         this.messageId = messageId;
         return this;

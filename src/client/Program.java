@@ -13,6 +13,7 @@ import shared.model.coap.CoapMessage;
 import shared.model.coap.CoapType;
 import shared.model.coap.option.AbstractCoapOption;
 import shared.model.coap.option.CoapOptionNumberEnum;
+import shared.model.coap.option.CoapOptionUriPath;
 import shared.service.CoapMesssageParser;
 import shared.service.CoapOptionResolver;
 import shared.util.ByteUtil;
@@ -77,9 +78,12 @@ public class Program {
 
     void startProgram() throws Exception {
         coapMessage = new CoapMessage()
-            .setPayload("This is a payload")
-            .setToken("A token")
-            .setMessageId(0xff);
+            .setMessageId(32052)
+            .addOption(new CoapOptionUriPath("temperature"))
+            .setCode(CoapCode.GET)
+            .setVersion(1)
+            .setType(CoapType.CON);
+            
 
         while(runProgram) {
             clearScreen();
@@ -306,8 +310,8 @@ public class Program {
             try {
                 CoapCode [] codes =  CoapCode.values();
                 System.out.println("Välj ett alternativ, tidigare värde: " + coapMessage.getCode());
-                for(int i = 0; i <  codes.length; i++) {
-                    System.out.println(i + "." + codes[i]);
+                for(int i = 1; i <  codes.length + 1; i++) {
+                    System.out.println(i + "." + codes[i - 1]);
                 }
 
                 coapMessage.setCode(CoapCode.get(Integer.parseInt(reader.readLine())));
