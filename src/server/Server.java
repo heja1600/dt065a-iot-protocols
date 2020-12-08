@@ -1,59 +1,45 @@
 package server;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-import server.listeners.OnMessageRetrieved;
+import server.listeners.ServerListener;
 import server.service.MessageHandler;
-import shared.config.ServerConfig;
+import server.service.ServerHandler;
 import shared.model.coap.CoapMessage;
-import shared.service.CoapMesssageParser;
 
-public class Server extends Thread {
+public class Server<T extends MessageHandler<T>> implements ServerListener {
 
-    ServerSocket serverSocket;
-    boolean runServer;
-    MessageHandler messageHandler;
-    int packetSize = 1024;
-    OnMessageRetrieved onMessageRetrieved;
-    CoapMesssageParser coapMesssageParser;
-    Server(OnMessageRetrieved onMessageRetrieved) {
-        this.onMessageRetrieved = onMessageRetrieved;
-         try {
-            serverSocket = new ServerSocket(ServerConfig.SERVER_PORT);
-            messageHandler = new MessageHandler();
-            coapMesssageParser = new CoapMesssageParser();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }   
+    public enum ServerType {
+        UDP, TCP;
     }
-    @Override
-    public void run() {
-        runServer = true;
 
-        while(runServer) {
+    ServerHandler serverHandler;
+    MessageHandler<T> messageHandler;
 
-            try {
-                Socket socket = serverSocket.accept();
-                OutputStream outpuStream = socket.getOutputStream();
-                InputStream inputStream = socket.getInputStream();
-                byte [] buffer = new byte[this.packetSize];
-                inputStream.read(buffer);
-        
-                CoapMessage message = coapMesssageParser.parseCoapMessage(buffer);
-                onMessageRetrieved.onMessageRetrieved(message);
+    public Server(Class<T> serverType) {
+        try {
+            serverHandler = new ServerHandler();
+            messageHandler = serverType
+                .getDeclaredConstructor()
+                .newInstance()
+                .setListener(this)
+                .setPacketLength(1024);
 
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        // TODO Auto-generated method stub
-        super.run();
+    }
+
+    public void startServer() {
+        messageHandler.start();
+    }
+
+    @Override
+    public void onMessageReceived(CoapMessage message) {
+       serverHandler.handleMessage(message);
+    }
+
+    public void stopServer() {
+        this.messageHandler.stopReceiving();
     }
 }
+

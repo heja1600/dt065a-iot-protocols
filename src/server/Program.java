@@ -1,26 +1,46 @@
 package server;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
-import server.listeners.OnMessageRetrieved;
-import server.service.MessageHandler;
-import shared.model.coap.CoapMessage;
+import server.service.TCPMessageHandler;
+import server.service.UDPMessageHandler;
 
-public class Program implements OnMessageRetrieved {
-    Server server;
-    MessageHandler messageHandler;
+public class Program {
+    Server<?> server;
+    BufferedReader reader;
     public static void main(String [] args) {
-        Program program = new Program();
-        program.startProgram();
+        new Program();
     }
+    @SuppressWarnings("unchecked")
     Program() {
-        messageHandler = new MessageHandler();
-        server = new Server(this);
+        reader = new BufferedReader(new InputStreamReader(System.in));
+        server = new Server(getServerType());
+        startProgram();
     }
+
+    Class<?> getServerType() {
+        while (true) {
+            try {
+                System.out.println("\n Choose communication type \n 1. UDP \n 2. TCP \n");
+                int index = Integer.parseInt(reader.readLine());
+                switch(index) {
+                    case 1: {
+                        return UDPMessageHandler.class;
+                    }
+                    case 2: {
+                        return TCPMessageHandler.class;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
     public void startProgram() {
-        server.start();
+        server.startServer();
     }
-	@Override
-	public void onMessageRetrieved(CoapMessage message) {
-		messageHandler.handleMessage(message);
-	}   
 }

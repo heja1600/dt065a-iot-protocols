@@ -149,8 +149,7 @@ public class CoapMesssageParser {
 
             int firstByte = byteArrayInputStream.read();
 
-            /** Set code */
-            coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
+
 
             /** Set version */
             coapMessage.setVersion((firstByte & 0xc0) >> 6); // 1100 0000
@@ -158,9 +157,14 @@ public class CoapMesssageParser {
             /** Set type */
             coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
 
+
+            /** Set code */
+            coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
+            
             /** Set Message id */
-            coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)));
- 
+            coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);
+            
+            System.out.println(coapMessage.getMessageId());
             /** Set token */
             int tokenLength = firstByte & 0xf; // 0000 1111
             coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
@@ -175,7 +179,6 @@ public class CoapMesssageParser {
             e.printStackTrace();
         }
  
-        printCoapMessage(coapMessage);
         /** Get coap code */
         return coapMessage;
     }
