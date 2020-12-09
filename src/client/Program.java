@@ -13,7 +13,6 @@ import shared.model.coap.CoapMessage;
 import shared.model.coap.CoapType;
 import shared.model.coap.option.AbstractCoapOption;
 import shared.model.coap.option.CoapOptionNumberEnum;
-import shared.model.coap.option.CoapOptionUriPath;
 import shared.service.CoapMesssageParser;
 import shared.service.CoapOptionResolver;
 import shared.util.ByteUtil;
@@ -24,7 +23,7 @@ public class Program {
 
     public enum ProgramOption {
         SEND(0), PREVIEW(1), PAYLOAD(2), TOKEN(3), VERSION(4), CODE(5), OPTIONS(6), HOSTNAME(7), PORT(8), EXIT(9),
-        TYPE(10), SERVER_TYPE(11);
+        TYPE(10), SERVER_TYPE(11), RESET_COAP_MESSAGE(12);
 
         Integer value;
 
@@ -68,20 +67,7 @@ public class Program {
     }
 
     void startProgram() throws Exception {
-        // coapMessage = new CoapMessage()
-        // .setMessageId(32052)
-        // .addOption(new CoapOptionUriPath("temperature"))
-        // .setCode(CoapCode.GET)
-        // .setVersion(1)
-        // .setType(CoapType.CON);
-
-        coapMessage = new CoapMessage()
-                .setVersion(1)
-                .setType(CoapType.NON)
-                .setCode(CoapCode.GET)
-                .setMessageId(0xaa55)
-                .addOption(new CoapOptionUriPath("test"));
-
+        resetCoapMessage();
         while (runProgram) {
             clearScreen();
             ProgramOption option = getProgramOption();
@@ -124,6 +110,10 @@ public class Program {
                     setType();
                     break;
                 }
+                case RESET_COAP_MESSAGE: {
+                    resetCoapMessage();
+                    break;
+                }
                 case OPTIONS: {
                     CoapOptionNumberEnum optionNumber = getOptionNumber();
                     setOptionValue(optionNumber);
@@ -140,6 +130,19 @@ public class Program {
         }
     }
 
+    void resetCoapMessage() {
+        try {
+            clearScreen();
+			coapMessage = new CoapMessage()
+                .setVersion(1)
+                .setType(CoapType.NON)
+                .setCode(CoapCode.GET)
+                .setMessageId(0xaa55);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
     void setServerType() {
         while (true) {
             try {
