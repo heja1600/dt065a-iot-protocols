@@ -7,11 +7,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import shared.config.ServerConfig;
+import shared.service.MessageParser;
 
-public class TCPMessageHandler extends MessageHandler<TCPMessageHandler> {
+
+public class TCPMessageReceiver<Message, Parser extends MessageParser<Message>> extends MessageReceiver<TCPMessageReceiver<Message, Parser>, Message, Parser> {
     ServerSocket serverSocket;
 
-    public TCPMessageHandler() {
+    public TCPMessageReceiver() {
         try {
             serverSocket = new ServerSocket(ServerConfig.SERVER_PORT);
         } catch (IOException e) {

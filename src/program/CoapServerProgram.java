@@ -1,21 +1,22 @@
-package server;
+package program;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import server.service.TCPMessageHandler;
+import server.CoapServer;
+import server.service.TCPMessageReceiver;
 import server.service.UDPMessageHandler;
 
-public class Program {
-    Server<?> server;
+public class CoapServerProgram {
+    CoapServer<?> server;
     BufferedReader reader;
     public static void main(String [] args) {
-        new Program();
+        new CoapServerProgram();
     }
     @SuppressWarnings("unchecked")
-    Program() {
+    CoapServerProgram() {
         reader = new BufferedReader(new InputStreamReader(System.in));
-        server = new Server(getServerType());
+        server = new CoapServer(getServerType());
         startProgram();
     }
 
@@ -29,7 +30,7 @@ public class Program {
                         return UDPMessageHandler.class;
                     }
                     case 2: {
-                        return TCPMessageHandler.class;
+                        return TCPMessageReceiver.class;
                     }
                 }
             } catch (Exception e) {

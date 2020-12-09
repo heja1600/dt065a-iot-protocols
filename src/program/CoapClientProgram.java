@@ -1,4 +1,4 @@
-package client;
+package program; 
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -6,20 +6,20 @@ import java.net.DatagramSocket;
 import java.util.HashMap;
 import java.util.Map;
 
-import server.Server.ServerType;
+import server.CoapServer.ServerType;
 import shared.config.ServerConfig;
 import shared.model.coap.CoapCode;
 import shared.model.coap.CoapMessage;
 import shared.model.coap.CoapType;
 import shared.model.coap.option.AbstractCoapOption;
 import shared.model.coap.option.CoapOptionNumberEnum;
-import shared.service.CoapMesssageParser;
+import shared.service.CoapMessageParser;
 import shared.service.CoapOptionResolver;
 import shared.util.ByteUtil;
 import shared.util.MessageSenderUtil;
 
 /** Very simple program to test the Coap Server */
-public class Program {
+public class CoapClientProgram {
 
     public enum ProgramOption {
         SEND(0), PREVIEW(1), PAYLOAD(2), TOKEN(3), VERSION(4), CODE(5), OPTIONS(6), HOSTNAME(7), PORT(8), EXIT(9),
@@ -58,10 +58,10 @@ public class Program {
     BufferedReader reader;
 
     public static void main(String[] args) throws Exception {
-        new Program();
+        new CoapClientProgram();
     }
 
-    Program() throws Exception {
+    CoapClientProgram() throws Exception {
         reader = new BufferedReader(new InputStreamReader(System.in));
         startProgram();
     }
@@ -78,7 +78,7 @@ public class Program {
                 }
                 case PREVIEW: {
                     clearScreen();
-                    CoapMesssageParser.printCoapMessage(coapMessage);
+                    CoapMessageParser.printCoapMessage(coapMessage);
                     pressKeyContinue();
                     break;
                 }
@@ -340,9 +340,9 @@ public class Program {
         clearScreen();
 
 
-        CoapMesssageParser parser = new CoapMesssageParser();
-        byte[] data = parser.createCoapMessage(coapMessage);
-        CoapMesssageParser.printCoapMessage(coapMessage);
+        CoapMessageParser parser = new CoapMessageParser();
+        byte[] data = parser.encode(coapMessage);
+        CoapMessageParser.printCoapMessage(coapMessage);
         try (var socket = new DatagramSocket()) {
             if(this.serverType == ServerType.UDP) {
                 MessageSenderUtil.udpSendMessage(data, port, hostname);

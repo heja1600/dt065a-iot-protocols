@@ -15,51 +15,87 @@ import shared.util.ByteUtil;
 
 
 
-public class CoapMesssageParser {
+public class CoapMessageParser implements MessageParser<CoapMessage>{
   
+	@Override
+	public CoapMessage decode(byte[] buffer) {
+        CoapMessage coapMessage = new CoapMessage();
+        try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer)) {
 
-    /**
-     * 
-     * @param coapMessage
-     * @return
-     */
-    public byte[] createCoapMessage(CoapMessage coapMessage) {
-        byte[] buffer;
+            int firstByte = byteArrayInputStream.read();
+
+
+
+            /** Set version */
+            coapMessage.setVersion((firstByte & 0xc0) >> 6); // 1100 0000
+
+            /** Set type */
+            coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
+
+
+            /** Set code */
+            coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
+            
+            /** Set Message id */
+            coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);
+            
+            System.out.println(coapMessage.getMessageId());
+            /** Set token */
+            int tokenLength = firstByte & 0xf; // 0000 1111
+            coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
+  
+            /** Parse the options */
+            parseOptions(0, 0, byteArrayInputStream, coapMessage);
+         
+            /** Parse payload */
+            coapMessage.setPayload(new String(byteArrayInputStream.readAllBytes()));
+     
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+ 
+        /** Get coap code */
+        return coapMessage;
+	}
+
+	@Override
+	public byte[] encode(CoapMessage message) {
+		byte[] buffer;
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
             /** Setting version and message type */
-            int firstByte = (((coapMessage.getVersion() << 2) | coapMessage.getType().get()) << 4);
+            int firstByte = (((message.getVersion() << 2) | message.getType().get()) << 4);
 
             /** Set token length */
-            if (coapMessage.getToken() != null) {
-                firstByte |= coapMessage.getToken().getBytes().length;
+            if (message.getToken() != null) {
+                firstByte |= message.getToken().getBytes().length;
             }
             byteArrayOutputStream.write(firstByte);
 
             /** Set response code or method */
-            if (coapMessage.getCode() != null) {
-                int coapMethod = coapMessage.getCode().get();
+            if (message.getCode() != null) {
+                int coapMethod = message.getCode().get();
                 byteArrayOutputStream.write(coapMethod);
             }
   
             /** Set message id */
-            byteArrayOutputStream.write((coapMessage.getMessageId() & 0xff00) >> 8);
-            byteArrayOutputStream.write(coapMessage.getMessageId() & 0xff);
+            byteArrayOutputStream.write((message.getMessageId() & 0xff00) >> 8);
+            byteArrayOutputStream.write(message.getMessageId() & 0xff);
             
             /** Set Token */
-            if(coapMessage.getToken() != null) {
-                byte [] tokenBytes = coapMessage.getToken().getBytes();
+            if(message.getToken() != null) {
+                byte [] tokenBytes = message.getToken().getBytes();
                 byteArrayOutputStream.write(tokenBytes, 0, tokenBytes.length);
             }
     
             /** Set all options */
-            var options = coapMessage.getOptions().values().iterator();
+            var options = message.getOptions().values().iterator();
             createOption(0, options, byteArrayOutputStream);
             
             /** Set payload byte to 1111 1111 */
             byteArrayOutputStream.write(0xff);
-            if(coapMessage.getPayload() != null) {
-                byteArrayOutputStream.write(coapMessage.getPayload().getBytes());
+            if(message.getPayload() != null) {
+                byteArrayOutputStream.write(message.getPayload().getBytes());
             }
 
             buffer = byteArrayOutputStream.toByteArray();
@@ -71,7 +107,7 @@ public class CoapMesssageParser {
 
         /** set Code (Method) */
         return buffer;
-    }
+	}
 
     private void createOption(
         Integer precedingOptionNumber, 
@@ -149,22 +185,18 @@ public class CoapMesssageParser {
 
             int firstByte = byteArrayInputStream.read();
 
-
-
             /** Set version */
             coapMessage.setVersion((firstByte & 0xc0) >> 6); // 1100 0000
 
             /** Set type */
             coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
 
-
             /** Set code */
             coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
             
             /** Set Message id */
             coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);
-            
-            System.out.println(coapMessage.getMessageId());
+
             /** Set token */
             int tokenLength = firstByte & 0xf; // 0000 1111
             coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
@@ -282,8 +314,8 @@ public class CoapMesssageParser {
 
 
     public static void printCoapMessage(CoapMessage coapMessage) {
-        CoapMesssageParser parser = new CoapMesssageParser();
-        byte [] bytes = parser.createCoapMessage(coapMessage);
+        CoapMessageParser parser = new CoapMessageParser();
+        byte [] bytes = parser.encode(coapMessage);
         System.out.println("Bits: \n");
         ByteUtil.printBytesAsString(bytes);
         System.out.println("\n");

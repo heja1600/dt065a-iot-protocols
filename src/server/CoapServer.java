@@ -1,22 +1,22 @@
 package server;
 
-import server.listeners.ServerListener;
+import server.listener.ServerListener;
 import server.service.MessageHandler;
-import server.service.ServerHandler;
+import server.service.MessageReceiver;
 import shared.model.coap.CoapMessage;
-
-public class Server<T extends MessageHandler<T>> implements ServerListener {
+import shared.service.CoapMessageParser;
+public class CoapServer<T extends MessageReceiver<T, CoapMessage, CoapMessageParser>> implements ServerListener<CoapMessage> {
 
     public enum ServerType {
         UDP, TCP;
     }
 
-    ServerHandler serverHandler;
-    MessageHandler<T> messageHandler;
+    MessageHandler serverHandler;
+    MessageReceiver<T, CoapMessage, CoapMessageParser> messageHandler;
 
-    public Server(Class<T> serverType) {
+    public CoapServer(Class<T> serverType) {
         try {
-            serverHandler = new ServerHandler();
+            serverHandler = new MessageHandler();
             messageHandler = serverType
                 .getDeclaredConstructor()
                 .newInstance()

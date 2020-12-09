@@ -3,20 +3,19 @@ package server.service;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.Arrays;
 
 import shared.config.ServerConfig;
-import shared.model.coap.CoapMessage;
-import shared.model.coap.CoapType;
+import shared.service.MessageParser;
 import shared.util.ByteUtil;
 
-public class UDPMessageHandler extends MessageHandler<UDPMessageHandler> {
+public class UDPMessageHandler<Message, Parser extends MessageParser<Message>> extends MessageReceiver<UDPMessageHandler<Message,Parser>, Message, Parser> {
 
     DatagramSocket datagramSocket;
     DatagramPacket recievePacket;
 
     public UDPMessageHandler() {
+
         try {
             datagramSocket = new DatagramSocket(ServerConfig.SERVER_PORT);
             recievePacket = new DatagramPacket(buffer, buffer.length);
@@ -33,12 +32,12 @@ public class UDPMessageHandler extends MessageHandler<UDPMessageHandler> {
             this.triggerOnMessageRecieved(packetData);
             ByteUtil.printBytesAsString(Arrays.copyOf(buffer, 20));
 
-            InetAddress clientAddress = recievePacket.getAddress();
-            int clientPort = recievePacket.getPort();
-            buffer = coapMesssageParser.createCoapMessage(new CoapMessage().setType(CoapType.ACK));
+            // InetAddress clientAddress = recievePacket.getAddress();
+            // int clientPort = recievePacket.getPort();
+            // buffer = parser.createCoapMessage(new CoapMessage().setType(CoapType.ACK));
 
-            DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddress, clientPort);
-            datagramSocket.send(response);
+            // DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddress, clientPort);
+            // datagramSocket.send(response);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
