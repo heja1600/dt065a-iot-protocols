@@ -17,7 +17,7 @@ public class UDPMessageHandler<Message, Parser extends MessageParser<Message>> e
     public UDPMessageHandler() {
 
         try {
-            datagramSocket = new DatagramSocket(ServerConfig.SERVER_PORT);
+            datagramSocket = new DatagramSocket(ServerConfig.COAP_SERVER_PORT);
             recievePacket = new DatagramPacket(buffer, buffer.length);
         } catch(Exception e) {
             e.printStackTrace();

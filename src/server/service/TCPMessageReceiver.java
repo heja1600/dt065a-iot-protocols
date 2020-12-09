@@ -15,7 +15,7 @@ public class TCPMessageReceiver<Message, Parser extends MessageParser<Message>> 
 
     public TCPMessageReceiver() {
         try {
-            serverSocket = new ServerSocket(ServerConfig.SERVER_PORT);
+            serverSocket = new ServerSocket(ServerConfig.COAP_SERVER_PORT);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

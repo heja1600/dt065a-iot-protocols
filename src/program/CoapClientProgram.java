@@ -54,7 +54,7 @@ public class CoapClientProgram {
     CoapMessage coapMessage;
     boolean runProgram = true;
     String hostname = "localhost";
-    int port = ServerConfig.SERVER_PORT;
+    int port = ServerConfig.COAP_SERVER_PORT;
     BufferedReader reader;
 
     public static void main(String[] args) throws Exception {

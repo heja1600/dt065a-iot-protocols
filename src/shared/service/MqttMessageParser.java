@@ -3,6 +3,7 @@ package shared.service;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
+import shared.model.mqtt.MqttConnectFlag;
 import shared.model.mqtt.MqttMessage;
 import shared.model.mqtt.MqttMessageType;
 import shared.model.mqtt.MqttQoS;
@@ -26,6 +27,8 @@ public class MqttMessageParser implements MessageParser<MqttMessage>{
 
             // Set Retain
             message.setRetainFlag((firstByte & 0x1) == 1);
+
+
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -52,10 +55,70 @@ public class MqttMessageParser implements MessageParser<MqttMessage>{
             // Set Retain
             firstByte =  firstByte | (message.isRetainFlag() ? 1 : 0);
 
+            byte [] extraBuffer = null;
+
+
+            switch(message.getMqttMessageType()) {
+                case CONNECT: {
+                    extraBuffer = encodeConnectMessage(message);
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            if(extraBuffer != null) {
+                byteArrayOutputStream.write(extraBuffer.length);
+                byteArrayOutputStream.write(extraBuffer);
+            }
+
             buffer = byteArrayOutputStream.toByteArray();
         } catch(Exception e) {
             e.printStackTrace();
         }
 		return buffer;
-	}   
+    }   
+    
+    /**
+     * Encoder for connect message
+     * @param message
+     * @param byteArrayOutputStream
+     */
+    private byte [] encodeConnectMessage(MqttMessage message) {
+        byte [] buffer = null;
+    	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            /** Connect packer variable header */
+            /** Protocol name */
+            String protocolName = "MQTT";
+            byteArrayOutputStream.write(0); // MSB
+            byteArrayOutputStream.write(protocolName.length()); // LSB
+            byteArrayOutputStream.write("MQTT".getBytes());
+
+            /** Protocol level */
+            byteArrayOutputStream.write(4); // Level 4
+
+            /** Connect flags */
+            MqttConnectFlag connectFlag = new MqttConnectFlag()
+                .setCleanSessionFlag();
+            byteArrayOutputStream.write(connectFlag.get()); 
+
+            /** Keep alive */
+            int keepAliveSeconds = 60;
+            byteArrayOutputStream.write(0); // MSB
+            byteArrayOutputStream.write(keepAliveSeconds); // LSB
+
+            /** Client ID */
+
+            String clientId = "DIGI";
+            byteArrayOutputStream.write(0);
+            byteArrayOutputStream.write(clientId.length());
+            byteArrayOutputStream.write(clientId.getBytes());
+            
+            buffer = byteArrayOutputStream.toByteArray();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
 }

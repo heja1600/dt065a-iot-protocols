@@ -34,7 +34,7 @@ public abstract class MessageReceiver<T extends MessageReceiver<T, Message, Pars
     public void run() {
         runServer = true;
         while(runServer) {
-            System.out.println("Listening on port " + ServerConfig.SERVER_PORT);
+            System.out.println("Listening on port " + ServerConfig.COAP_SERVER_PORT);
             serverEventLoop();
         }
         super.run();

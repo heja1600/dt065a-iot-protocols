@@ -43,4 +43,14 @@ public class ByteUtil {
             System.out.println(ByteUtil.byteToString(_byte));
         }
     }
+
+    public static int boolArrayToInteger(boolean [] bools) {
+        byte val = 0;
+        for(int i = 0; i < bools.length; i++) {
+            val <<= 1;
+            if (bools[i]) val |= 1;
+        }
+
+        return val & ((int)Math.pow(2, bools.length) - 1);
+    }
 }
