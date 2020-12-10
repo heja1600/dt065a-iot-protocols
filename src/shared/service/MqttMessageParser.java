@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import shared.model.mqtt.MqttConnectFlag;
+import shared.model.mqtt.MqttControlPacketType;
 import shared.model.mqtt.MqttMessage;
-import shared.model.mqtt.MqttMessageType;
 import shared.model.mqtt.MqttQoS;
 
 public class MqttMessageParser implements MessageParser<MqttMessage>{
@@ -17,7 +17,7 @@ public class MqttMessageParser implements MessageParser<MqttMessage>{
 
             int firstByte = byteArrayInputStream.read();
             // Set type
-            message.setMqttMessageType(MqttMessageType.get((firstByte & 0xf0) >> 4));
+            message.setMqttMessageType(MqttControlPacketType.get((firstByte & 0xf0) >> 4));
 
             // Set DUP flag
             message.setDUPFlag(((firstByte & 0x8) >> 3) == 1);

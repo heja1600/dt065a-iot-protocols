@@ -2,19 +2,19 @@ package shared.model.coap.option;
 
 public abstract class AbstractCoapOption<T> {
 
-    private boolean _isCrucial;
-    private boolean _isUnsafe;
-    private boolean _isNoCacheKey;
-    private boolean _isRepeatable;
+    private Boolean _isCrucial;
+    private Boolean _isUnsafe;
+    private Boolean _isNoCacheKey;
+    private Boolean _isRepeatable;
     private CoapOptionNumberEnum _number;
     protected T _value;
 
     public AbstractCoapOption(
         CoapOptionNumberEnum _number,  
-        boolean _isCrucial, 
-        boolean _isUnsafe, 
-        boolean _isNoCacheKey, 
-        boolean _isRepetable,
+        Boolean _isCrucial, 
+        Boolean _isUnsafe, 
+        Boolean _isNoCacheKey, 
+        Boolean _isRepetable,
         T _value
     ) {
         this._isCrucial = _isCrucial;
@@ -28,16 +28,16 @@ public abstract class AbstractCoapOption<T> {
     public CoapOptionNumberEnum getNumber() {
         return this._number;
     }
-    public boolean isCrucial() {
+    public Boolean isCrucial() {
         return this._isCrucial;
     }
-    public boolean isUnsafe() {
+    public Boolean isUnsafe() {
         return this._isUnsafe;
     }
-    public boolean isNoCacheKey() {
+    public Boolean isNoCacheKey() {
         return this._isNoCacheKey;
     }
-    public boolean isRepetable() {
+    public Boolean isRepetable() {
         return this._isRepeatable;
     }
     public T getValue() {

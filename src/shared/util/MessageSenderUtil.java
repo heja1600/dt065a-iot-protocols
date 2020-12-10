@@ -34,4 +34,17 @@ public class MessageSenderUtil {
             e.printStackTrace();
         }
     }
+
+    public static byte [] tcpSendAndReceive(byte[] packet,int port, String hostname) {
+        try (var socket = new Socket(hostname, port)) {
+            ByteUtil.printBytesAsString(packet);
+            socket.getOutputStream().write(packet);
+
+            return socket.getInputStream().readAllBytes();
+            
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -2,23 +2,27 @@ package server.service;
 
 import java.util.Arrays;
 
+import server.listener.MessageCallback;
 import server.listener.ServerListener;
 import shared.config.ServerConfig;
 import shared.service.MessageParser;
 import shared.util.ByteUtil;
 
-public abstract class MessageReceiver<T extends MessageReceiver<T, Message, Parser>, Message, Parser extends MessageParser<Message>> extends Thread {
+public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Thread {
 
     private boolean runServer;
     private int packetSize;
-  
-    protected Parser parser;
+
+    protected MessageParser<Message> parser;
     protected byte[] buffer;
-    protected abstract void serverEventLoop();
+
     private ServerListener<Message> serverListener;
 
-    MessageReceiver() {
-        // this.parser = clazz.getDeclaredConstructor().newInstance();
+    protected abstract void serverEventLoop();
+    
+    @SuppressWarnings("unchecked")
+    MessageReceiver(MessageParser<Message> parser) {
+        this.parser = parser;
         try {
 
             packetSize = 1024;
@@ -44,24 +48,25 @@ public abstract class MessageReceiver<T extends MessageReceiver<T, Message, Pars
     }
 
     @SuppressWarnings("unchecked")
-    public T setPacketLength(int packetSize) {
+    public ParentMessageReceiver setPacketLength(int packetSize) {
         this.packetSize = packetSize;
-        return (T) this;
+        return (ParentMessageReceiver) this;
     }
 
 
     @SuppressWarnings("unchecked")
-    public T setListener(ServerListener<Message> serverListener) {
+    public ParentMessageReceiver setListener(ServerListener<Message> serverListener) {
         this.serverListener = serverListener;
-        return (T) this;
+        return (ParentMessageReceiver) this;
     }
 
 
-    protected void triggerOnMessageRecieved(byte [] buffer) {
+    protected void triggerOnMessageRecieved(byte [] buffer, MessageCallback<Message> callback) {
         if(this.serverListener != null) {
             ByteUtil.printBytesAsString(Arrays.copyOf(buffer, 10));
             Message message = this.parser.decode(buffer);
-            this.serverListener.onMessageReceived(message);
+            serverListener.onMessageReceived(message, callback);
         }
     }
+    
 }

@@ -24,14 +24,11 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
 
             int firstByte = byteArrayInputStream.read();
 
-
-
             /** Set version */
             coapMessage.setVersion((firstByte & 0xc0) >> 6); // 1100 0000
 
             /** Set type */
             coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
-
 
             /** Set code */
             coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
@@ -39,7 +36,6 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
             /** Set Message id */
             coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);
             
-            System.out.println(coapMessage.getMessageId());
             /** Set token */
             int tokenLength = firstByte & 0xf; // 0000 1111
             coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
@@ -53,14 +49,13 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
         } catch(Exception e) {
             e.printStackTrace();
         }
- 
         /** Get coap code */
         return coapMessage;
 	}
 
 	@Override
 	public byte[] encode(CoapMessage message) {
-		byte[] buffer;
+		byte[] buffer = null;
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
             /** Setting version and message type */
@@ -93,17 +88,15 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
             createOption(0, options, byteArrayOutputStream);
             
             /** Set payload byte to 1111 1111 */
-            byteArrayOutputStream.write(0xff);
             if(message.getPayload() != null) {
+                byteArrayOutputStream.write(0xff);
                 byteArrayOutputStream.write(message.getPayload().getBytes());
             }
 
             buffer = byteArrayOutputStream.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
-
 
         /** set Code (Method) */
         return buffer;
@@ -124,7 +117,7 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
         Integer optionNumber = firstOption.getNumber().get();
         /** If its the first, option delta will be same as option number */
 
-        var optionDelta = optionNumber + precedingOptionNumber;
+        var optionDelta = optionNumber - precedingOptionNumber; 
         byte [] optionValue = optionValueToBytes(firstOption);
 
         /** Option delta & Option length  */
@@ -202,10 +195,14 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
             coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
   
             /** Parse the options */
-            parseOptions(0, 0, byteArrayInputStream, coapMessage);
-         
-            /** Parse payload */
-            coapMessage.setPayload(new String(byteArrayInputStream.readAllBytes()));
+            boolean payloadMarkerFound = parseOptions(0, 0, byteArrayInputStream, coapMessage);
+
+            if(payloadMarkerFound) {
+                /** Parse payload */
+                coapMessage.setPayload(new String(byteArrayInputStream.readAllBytes()));
+            }
+            
+  
      
         } catch(Exception e) {
             e.printStackTrace();
@@ -221,9 +218,10 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
      * @param precedingOptionNumber
      * @param byteArrayInputStream
      * @param coapMessage
+     * @return true if payload marker has been found
      * @throws Exception
      */
-    private void parseOptions(
+    private boolean parseOptions(
         int precedingDeltaOption, 
         int precedingOptionNumber, 
         ByteArrayInputStream byteArrayInputStream,
@@ -231,9 +229,13 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
     ) throws Exception {
 
         var firstByte = byteArrayInputStream.read();
+        
+        if(firstByte == 0) {
+            return false;
+        }
         /** Option delta */
         var deltaOption = (firstByte & 0xf0) >> 4; // 1111 0000
-        
+
         int optionNumber;
 
         /** If its same type of option as previous, use previous option delta*/
@@ -245,7 +247,7 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
              * 13: 8-bit unsigned integer follows the initial byte and
              * indicates the Option Delta minus 13. 
              */
-            optionNumber = ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(1)) - precedingOptionNumber;
+            optionNumber = ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(1)) + precedingOptionNumber;
 
         } else if(deltaOption == 14) {
             /** 
@@ -253,7 +255,7 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
              * the initial byte and indicates the Option Delta minus 269.
              */
 
-            optionNumber = ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) - precedingOptionNumber;
+            optionNumber = ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) + precedingOptionNumber;
             
         } else if(deltaOption == 15) { 
             /** 
@@ -261,14 +263,14 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
              * set to this value but the entire byte is not the payload 
              * marker, this MUSTbe processed as a message format error.
              */
-            return;
+            return true;
         } else {
             /**
              * Option Delta:  4-bit unsigned integer.  A value 
              * between 0 and 12 indicates the Option Delta. Three 
              * values are reserved for special constructs:
              */  
-            optionNumber = deltaOption - precedingOptionNumber;
+            optionNumber = deltaOption + precedingOptionNumber;
         }
 
         var optionValueLength = (firstByte & 0x0f); // 0000 1111
@@ -298,12 +300,12 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
         byte [] optionValue = byteArrayInputStream.readNBytes(optionValueLength);
         CoapOptionNumberEnum coapOptionNumber = CoapOptionNumberEnum.get(optionNumber);
         if(coapOptionNumber == null) {
-            throw new Exception("Cannot get coapOption number from null");
+            return false;
         }
         
         AbstractCoapOption<?> option = CoapOptionResolver.resolveOption(coapOptionNumber, optionValue);
         coapMessage.addOption(option);
-        parseOptions(
+        return parseOptions(
             sameOptionNumber ? precedingDeltaOption : deltaOption , 
             sameOptionNumber ? precedingOptionNumber : optionNumber,
             byteArrayInputStream, 
@@ -316,9 +318,9 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
     public static void printCoapMessage(CoapMessage coapMessage) {
         CoapMessageParser parser = new CoapMessageParser();
         byte [] bytes = parser.encode(coapMessage);
-        System.out.println("Bits: \n");
+        System.out.println("Bits:");
         ByteUtil.printBytesAsString(bytes);
-        System.out.println("\n");
+        System.out.println("CoapMessage:");
         System.out.println("Coap code is: " + coapMessage.getCode());
         System.out.println("Coap version is: " + coapMessage.getVersion());
         System.out.println("Coap type is: " + coapMessage.getType());

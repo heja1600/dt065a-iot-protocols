@@ -3,7 +3,7 @@ package shared.model.mqtt;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum MqttMessageType {
+public enum MqttControlPacketType {
     CONNECT(1),
     PUBLISH(3),
     SUBCRIBE(8),
@@ -14,7 +14,7 @@ public enum MqttMessageType {
 
     private int mqttType;
 
-    private MqttMessageType(int mqttType)  {
+    private MqttControlPacketType(int mqttType)  {
         this.mqttType = mqttType;
     }
 
@@ -24,22 +24,20 @@ public enum MqttMessageType {
     }
 
     //Lookup table
-    private static final Map<Integer, MqttMessageType> lookup = new HashMap<>();
+    private static final Map<Integer, MqttControlPacketType> lookup = new HashMap<>();
 
     //Populate the lookup table on loading time
     static
     {
-        for(MqttMessageType env : MqttMessageType.values())
+        for(MqttControlPacketType env : MqttControlPacketType.values())
         {
             lookup.put(env.get(), env);
         }
     }
     
     //This method can be used for reverse lookup purpose
-    public static MqttMessageType get(int MqttMessageType) 
+    public static MqttControlPacketType get(int MqttMessageType) 
     {
         return lookup.get( MqttMessageType);
     }
-
-
 }

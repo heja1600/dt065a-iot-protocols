@@ -10,7 +10,10 @@ public enum CoapCode {
     PUT(3),
     DELETE(4),
 
+    VALID(67),
+
     BAD_REQUEST(128);
+
 
     private int coapCoade;
 

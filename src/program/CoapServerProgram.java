@@ -5,7 +5,9 @@ import java.io.InputStreamReader;
 
 import server.CoapServer;
 import server.service.TCPMessageReceiver;
-import server.service.UDPMessageHandler;
+import server.service.UDPMessageReceiver;
+import shared.model.coap.CoapMessage;
+import shared.service.CoapMessageParser;
 
 public class CoapServerProgram {
     CoapServer<?> server;
@@ -16,21 +18,23 @@ public class CoapServerProgram {
     @SuppressWarnings("unchecked")
     CoapServerProgram() {
         reader = new BufferedReader(new InputStreamReader(System.in));
-        server = new CoapServer(getServerType());
+        server = getServer();
+
         startProgram();
     }
 
-    Class<?> getServerType() {
+
+    CoapServer<?> getServer() {
         while (true) {
             try {
                 System.out.println("\n Choose communication type \n 1. UDP \n 2. TCP \n");
                 int index = Integer.parseInt(reader.readLine());
                 switch(index) {
                     case 1: {
-                        return UDPMessageHandler.class;
+                        return new CoapServer<UDPMessageReceiver<CoapMessage>>(new UDPMessageReceiver<>(new CoapMessageParser()));
                     }
                     case 2: {
-                        return TCPMessageReceiver.class;
+                        return new CoapServer<TCPMessageReceiver<CoapMessage>>(new TCPMessageReceiver<>(new CoapMessageParser()));
                     }
                 }
             } catch (Exception e) {
@@ -38,8 +42,7 @@ public class CoapServerProgram {
             }
         }
     }
-
-
+    
 
     public void startProgram() {
         server.startServer();

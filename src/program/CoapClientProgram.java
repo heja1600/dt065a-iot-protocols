@@ -1,8 +1,8 @@
 package program; 
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.DatagramSocket;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,6 +50,7 @@ public class CoapClientProgram {
             return lookup.get(value);
         }
     }
+
     ServerType serverType = ServerType.UDP;
     CoapMessage coapMessage;
     boolean runProgram = true;
@@ -133,16 +134,14 @@ public class CoapClientProgram {
     void resetCoapMessage() {
         try {
             clearScreen();
-			coapMessage = new CoapMessage()
-                .setVersion(1)
-                .setType(CoapType.NON)
-                .setCode(CoapCode.GET)
-                .setMessageId(0xaa55);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            coapMessage = new CoapMessage().setVersion(1).setType(CoapType.NON).setCode(CoapCode.GET)
+                    .setMessageId(0xaa55);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
+
     void setServerType() {
         while (true) {
             try {
@@ -335,22 +334,28 @@ public class CoapClientProgram {
             }
         }
     }
- 
+
     void sendMessage(CoapMessage coapMessage) {
         clearScreen();
 
-
         CoapMessageParser parser = new CoapMessageParser();
         byte[] data = parser.encode(coapMessage);
+        System.out.println("Sending packet: ");
         CoapMessageParser.printCoapMessage(coapMessage);
-        try (var socket = new DatagramSocket()) {
-            if(this.serverType == ServerType.UDP) {
-                MessageSenderUtil.udpSendMessage(data, port, hostname);
+        try {
+            if (this.serverType == ServerType.UDP) {
+
+                byte[] receivePacket = MessageSenderUtil.udpSendAndRecieve(data, port, hostname, 1024);
+                System.out.println("Received packet: ");
+                CoapMessageParser.printCoapMessage(parser.parseCoapMessage(receivePacket));
             } else {
-                MessageSenderUtil.tcpSendMessage(data, port, hostname);
+                byte[] receivePacket = MessageSenderUtil.tcpSendAndReceive(data, port, hostname);
+                System.out.println("Received packet: ");
+                CoapMessageParser.printCoapMessage(parser.parseCoapMessage(receivePacket));
             }
 
-        } catch(Exception e) {
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

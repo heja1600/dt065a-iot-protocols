@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum CoapOptionNumberEnum {
+    UNKNOWN(-1),
     IF_MATCH(1),
     URI_HOST(3),
     E_TAG(4),

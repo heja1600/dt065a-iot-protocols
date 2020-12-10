@@ -33,9 +33,9 @@ public enum CoapOptionExtended {
             throw new Exception("Couldnt get OptionExtended from number: " + number);
         }
         return number <= 12 
-        ? CoapOptionExtended.ZERO_BYTES
-        : number <= 0xff
-        ? CoapOptionExtended.ONE_BYTE
-        : CoapOptionExtended.TWO_BYTES;
+            ? CoapOptionExtended.ZERO_BYTES
+            : number <= 0xff
+            ? CoapOptionExtended.ONE_BYTE
+            : CoapOptionExtended.TWO_BYTES;
     }
 }

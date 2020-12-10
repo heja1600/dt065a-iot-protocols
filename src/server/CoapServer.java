@@ -1,27 +1,26 @@
 package server;
 
+import server.listener.MessageCallback;
 import server.listener.ServerListener;
 import server.service.MessageHandler;
 import server.service.MessageReceiver;
 import shared.model.coap.CoapMessage;
-import shared.service.CoapMessageParser;
-public class CoapServer<T extends MessageReceiver<T, CoapMessage, CoapMessageParser>> implements ServerListener<CoapMessage> {
+
+public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements ServerListener<CoapMessage> {
 
     public enum ServerType {
         UDP, TCP;
     }
 
     MessageHandler serverHandler;
-    MessageReceiver<T, CoapMessage, CoapMessageParser> messageHandler;
+    T messageReceiver;
 
-    public CoapServer(Class<T> serverType) {
+    public CoapServer(T messageReceiver) {
         try {
             serverHandler = new MessageHandler();
-            messageHandler = serverType
-                .getDeclaredConstructor()
-                .newInstance()
-                .setListener(this)
-                .setPacketLength(1024);
+            this.messageReceiver = messageReceiver;
+            messageReceiver.setListener(this);
+            messageReceiver.setPacketLength(1024);
 
         } catch (Exception e) {
             // TODO Auto-generated catch block
@@ -30,16 +29,16 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage, CoapMessagePar
     }
 
     public void startServer() {
-        messageHandler.start();
-    }
-
-    @Override
-    public void onMessageReceived(CoapMessage message) {
-       serverHandler.handleMessage(message);
+        messageReceiver.start();
     }
 
     public void stopServer() {
-        this.messageHandler.stopReceiving();
+        this.messageReceiver.stopReceiving();
+    }
+
+    @Override
+    public void onMessageReceived(CoapMessage message, MessageCallback<CoapMessage> callback) {
+        callback.respond(serverHandler.handleMessage(message));
     }
 }
 
