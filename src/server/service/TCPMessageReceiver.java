@@ -8,21 +8,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import server.listener.MessageCallback;
-import shared.config.ServerConfig;
 import shared.service.MessageParser;
 
-public class TCPMessageReceiver <Message> extends MessageReceiver<TCPMessageReceiver<Message>, Message>
+public class TCPMessageReceiver <Message> extends MessageReceiver<TCPMessageReceiver<Message>, Message> 
 {   
     
     ServerSocket serverSocket;
     public TCPMessageReceiver(MessageParser<Message> parser) {
         super(parser);
-        try {
-            serverSocket = new ServerSocket(ServerConfig.COAP_SERVER_PORT);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+   
     }
 
     @Override
@@ -52,4 +46,24 @@ public class TCPMessageReceiver <Message> extends MessageReceiver<TCPMessageRece
         }
     }
 
+    @Override
+    public void onInit() {
+        try {
+            serverSocket = new ServerSocket(port);
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 }

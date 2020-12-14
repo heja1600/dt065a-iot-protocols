@@ -1,11 +1,26 @@
-package program; 
+package program;
 
-import java.io.BufferedReader;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.FlowLayout;
+import java.awt.event.ItemEvent;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import program.swing.SwingUtil;
 import server.CoapServer.ServerType;
 import shared.config.ServerConfig;
 import shared.model.coap.CoapCode;
@@ -18,363 +33,279 @@ import shared.service.CoapOptionResolver;
 import shared.util.ByteUtil;
 import shared.util.MessageSenderUtil;
 
-/** Very simple program to test the Coap Server */
-public class CoapClientProgram {
-
-    public enum ProgramOption {
-        SEND(0), PREVIEW(1), PAYLOAD(2), TOKEN(3), VERSION(4), CODE(5), OPTIONS(6), HOSTNAME(7), PORT(8), EXIT(9),
-        TYPE(10), SERVER_TYPE(11), RESET_COAP_MESSAGE(12);
-
-        Integer value;
-
-        ProgramOption(Integer value) {
-            this.value = value;
-        }
-
-        public Integer get() {
-            return this.value;
-        }
-
-        // Lookup table
-        private static final Map<Integer, ProgramOption> lookup = new HashMap<>();
-
-        // Populate the lookup table on loading time
-        static {
-            for (ProgramOption env : ProgramOption.values()) {
-                lookup.put(env.get(), env);
-            }
-        }
-
-        // This method can be used for reverse lookup purpose
-        public static ProgramOption get(Integer value) {
-            return lookup.get(value);
-        }
-    }
-
+public class CoapClientProgram extends JFrame {
+    CoapMessage message;
+    private static final long serialVersionUID = 1L;
+    String hostname = "coap.me";
     ServerType serverType = ServerType.UDP;
-    CoapMessage coapMessage;
-    boolean runProgram = true;
-    String hostname = "localhost";
-    int port = ServerConfig.COAP_SERVER_PORT;
-    BufferedReader reader;
-
+    JTextArea coapResponseBits;
+    JTextArea coapResponse;
+    JTextArea coapRequest;
+    JTextArea coapRequestBits;
+    Integer port = ServerConfig.COAP_SERVER_PORT;
+    JPanel gridpPanel;
+    Map<Integer, AbstractCoapOption<?>> options = new HashMap<>();
+    JTextField messageIdComponent;
     public static void main(String[] args) throws Exception {
-        new CoapClientProgram();
+        CoapClientProgram program = new CoapClientProgram();
+        program.setVisible(true);
     }
 
-    CoapClientProgram() throws Exception {
-        reader = new BufferedReader(new InputStreamReader(System.in));
-        startProgram();
+    public CoapClientProgram() throws Exception {
+        super("Coap Client");
+        this.message = new CoapMessage().setType(CoapType.NON).setVersion(1);
+        this.setSize(900, 550);
+        this.setLocation(100, 100);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setResizable(true);
+        createContent();
+    }   
+
+    private void updateMessageId(){
+        Random r = new Random();
+        int low = 0;
+        int high = 65535;
+        int result = r.nextInt(high-low) + low;
+        messageIdComponent.setText("" + result);
+
     }
 
-    void startProgram() throws Exception {
-        resetCoapMessage();
-        while (runProgram) {
-            clearScreen();
-            ProgramOption option = getProgramOption();
-            switch (option) {
-                case SEND: {
-                    sendMessage(coapMessage);
-                    break;
-                }
-                case PREVIEW: {
-                    clearScreen();
-                    CoapMessageParser.printCoapMessage(coapMessage);
-                    pressKeyContinue();
-                    break;
-                }
-                case PAYLOAD: {
-                    setPayload();
-                    break;
-                }
-                case HOSTNAME: {
-                    setHostname();
-                    break;
-                }
-                case PORT: {
-                    setPort();
-                    break;
-                }
-                case TOKEN: {
-                    setToken();
-                    break;
-                }
-                case VERSION: {
-                    setVersion();
-                    break;
-                }
-                case CODE: {
-                    setCode();
-                    break;
-                }
-                case TYPE: {
-                    setType();
-                    break;
-                }
-                case RESET_COAP_MESSAGE: {
-                    resetCoapMessage();
-                    break;
-                }
-                case OPTIONS: {
-                    CoapOptionNumberEnum optionNumber = getOptionNumber();
-                    setOptionValue(optionNumber);
-                    break;
-                }
-                case SERVER_TYPE: {
-                    setServerType();
-                    break;
-                }
-                case EXIT: {
-                    runProgram = false;
-                }
-            }
-        }
-    }
+    private void createContent() {
+        Container mainContainer = this.getContentPane();
+        mainContainer.setLayout(new BorderLayout(8, 6));
 
-    void resetCoapMessage() {
-        try {
-            clearScreen();
-            coapMessage = new CoapMessage().setVersion(1).setType(CoapType.NON).setCode(CoapCode.GET)
-                    .setMessageId(0xaa55);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+        /** TOP PANEL START */
+        JPanel topPanel = new JPanel();
 
-    void setServerType() {
-        while (true) {
+        topPanel.setLayout(new FlowLayout(5));
+        JButton sendButton = new JButton("Send");
+        sendButton.addActionListener(event -> {
+            sendMessage(message);
+        });
+        topPanel.add(sendButton);
+        mainContainer.add(topPanel, BorderLayout.NORTH);
+        /** TOP PANEL END */
+
+        /** MIDDLE PANEL START */
+        JPanel middlePanel = new JPanel();
+        middlePanel.setLayout(new FlowLayout(4, 4, 4));
+
+        /** Grid PANEL START */
+        gridpPanel = new JPanel();
+        gridpPanel.setLayout(new BoxLayout(gridpPanel, BoxLayout.Y_AXIS));
+
+        // CoapCode
+        JLabel coapCodeLabel = new JLabel("Code:");
+        JComboBox<CoapCode> coapCodeComponent = new JComboBox<CoapCode>(CoapCode.values());
+        coapCodeComponent.setSelectedItem(0);
+        coapCodeComponent.addItemListener(event -> {
+            message.setCode((CoapCode) coapCodeComponent.getSelectedItem());
+        });
+
+        // Type
+        JLabel coapTypeLabel = new JLabel("Code:");
+        JComboBox<CoapType> coapTypeComponent = new JComboBox<CoapType>(CoapType.values());
+        coapTypeComponent.setSelectedItem(1);
+        coapTypeComponent.addItemListener(event -> {
+            message.setType((CoapType) coapTypeComponent.getSelectedItem());
+        });
+
+        // ServerType
+        JLabel serverTypeLabel = new JLabel("Server Type:");
+        JComboBox<ServerType> serverTypeComponent = new JComboBox<ServerType>(ServerType.values());
+        serverTypeComponent.setSelectedItem(0);
+        serverTypeComponent.addItemListener(event -> {
+            serverType = (ServerType) serverTypeComponent.getSelectedItem();
+        });
+        /** Payload */
+        JLabel payloadLabel = new JLabel("Payload:");
+        JTextField payloadComponent = new JTextField(20);
+        SwingUtil.addChangeListener(payloadComponent, message, (message, value) -> {
+            message.setPayload(value == "" ? null : value);
+        });
+
+        /** Token */
+        JLabel tokenLabel = new JLabel("token:");
+        JTextField tokenComponent = SwingUtil.createTextField("Token: ", null, 8);
+        SwingUtil.addChangeListener(tokenComponent, message, (message, value) -> {
             try {
-                ServerType[] options = ServerType.values();
-                System.out.println("Välj ett alternativ:");
-                for (int i = 0; i < options.length; i++) {
-                    System.out.println(i + "." + options[i]);
-                }
-                this.serverType = options[Integer.parseInt(reader.readLine())];
-                break;
+                message.setToken(value == "" ? null : value);
             } catch (Exception e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-        }
-    }
+        });
 
-    ProgramOption getProgramOption() {
-        while (true) {
-            try {
-                ProgramOption[] options = ProgramOption.values();
-                System.out.println("Välj ett alternativ:");
-                for (int i = 0; i < options.length; i++) {
-                    System.out.println(i + "." + options[i]);
-                }
-                return options[Integer.parseInt(reader.readLine())];
+        /** hostname */
+        JLabel hostnameLabel = new JLabel("hostname:");
+        JTextField hostnameComponent = SwingUtil.createTextField("hostname: ", hostname);
+        SwingUtil.addChangeListener(hostnameComponent, message, (message, value) -> this.hostname = value);
 
-            } catch (Exception e) {
-                e.printStackTrace();
+        /** Message ID */
+        JLabel messageIdLabel = new JLabel("Message Id:");
+        messageIdComponent = SwingUtil.createNumberInput("Message Id", 0);
+        messageIdComponent.setEditable(false);
+        updateMessageId();
+        // CoapCode
+        JLabel coapOptionLabel = new JLabel("Add Coap Option:");
+        JComboBox<CoapOptionNumberEnum> coapOptionComponent = new JComboBox<CoapOptionNumberEnum>(
+                CoapOptionNumberEnum.values());
+        coapOptionComponent.setSelectedItem(null);
+        coapOptionComponent.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                addOption((CoapOptionNumberEnum) coapOptionComponent.getSelectedItem());
+                coapOptionComponent.setSelectedItem(null);
             }
-        }
-    }
+        });
 
-    CoapOptionNumberEnum getOptionNumber() {
-        while (true) {
+        SwingUtil.addChangeListener(messageIdComponent, message, (message, value) -> {
             try {
-                clearScreen();
-                CoapOptionNumberEnum[] options = CoapOptionNumberEnum.values();
-                System.out.println("Välj ett alternativ:");
-                for (int i = 0; i < options.length; i++) {
-                    System.out.println(i + "." + options[i]
-                            + (CoapOptionResolver.isAvailable(options[i]) ? "" : " - NOT IMPLEMENTED"));
-                }
-                int index = Integer.parseInt(reader.readLine());
-                if (CoapOptionResolver.isAvailable(options[index])) {
-                    return options[index];
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    void setOptionValue(CoapOptionNumberEnum optionNumber) {
-        while (true) {
-            try {
-
-                System.out.println("Välje värde för option: " + optionNumber);
-
-                String optionValue = reader.readLine();
-                byte[] optionValueInBytes;
-                if (CoapOptionResolver.resolveType(optionNumber) == Integer.class) {
-                    optionValueInBytes = ByteUtil.integerToByteArray(Integer.parseInt(optionValue));
+                System.out.println(value);
+                if (value.isBlank()) {
+                    message.setMessageId(0);
                 } else {
-                    optionValueInBytes = ByteUtil.stringToByteArray(optionValue);
-                }
-                AbstractCoapOption<?> coapOption = CoapOptionResolver.resolveOption(optionNumber, optionValueInBytes);
-
-                if (!coapOption.isRepetable() && coapMessage.getOptions().containsKey(optionNumber)
-                        && !coapMessage.getOptions().get(optionNumber).isEmpty()) {
-                    System.out.println("The value is already registered and can only be registered once");
-                    System.out.println("1. Remove previous value");
-                    System.out.println("2. Ovveride value");
-                    System.out.println("3. Avbryt");
-                    int choice = Integer.parseInt(reader.readLine());
-
-                    if (choice == 1) {
-                        coapMessage.getOptions().put(optionNumber, null);
-                    } else if (choice == 2) {
-                        coapMessage.getOptions().put(optionNumber, null);
-                        coapMessage.addOption(coapOption);
-                    }
-                } else {
-                    coapMessage.addOption(coapOption);
+                    message.setMessageId(Integer.parseInt(value));
                 }
 
-                break;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
+        });
 
-    void setType() {
-        while (true) {
-            try {
-                clearScreen();
-                CoapType[] types = CoapType.values();
-                System.out.println("Välj ett alternativ, tidigare värde: " + coapMessage.getCode());
-                for (int i = 0; i < types.length; i++) {
-                    System.out.println(i + "." + types[i]);
-                }
-                coapMessage.setType(CoapType.get(Integer.parseInt(reader.readLine())));
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        gridpPanel.add(SwingUtil.group(
+                new Component[] { payloadLabel, coapCodeLabel, messageIdLabel, tokenLabel, hostnameLabel, coapTypeLabel,
+                        serverTypeLabel, coapOptionLabel },
+                new Component[] { payloadComponent, coapCodeComponent, messageIdComponent, tokenComponent,
+                        hostnameComponent, coapTypeComponent, serverTypeComponent, coapOptionComponent }));
 
-    void setVersion() {
-        while (true) {
-            clearScreen();
-            try {
-                System.out.println("Sätt version 0-3, tidigare värde: " + coapMessage.getVersion());
-                coapMessage.setVersion(Integer.parseInt(reader.readLine()));
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        JPanel coapRequestBitsPanel = new JPanel();
+        coapRequestBits = new JTextArea(10, 20);
+        coapRequestBits.setEditable(false);
+        coapRequestBitsPanel.add(new JScrollPane(coapRequestBits, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
 
-    void setHostname() {
-        while (true) {
-            clearScreen();
-            try {
-                System.out.println("Skriv ett hostname, tidigare värde: " + hostname);
-                hostname = reader.readLine();
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        JPanel coapResponseBitsPanel = new JPanel();
+        coapResponseBits = new JTextArea(10, 20);
+        coapResponseBits.setEditable(false);
+        coapResponseBitsPanel.add(new JScrollPane(coapResponseBits, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
 
-    void setPort() {
-        while (true) {
-            clearScreen();
-            try {
-                System.out.println("Skriv ett port, tidigare värde: " + port);
-                port = Integer.parseInt(reader.readLine());
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        JPanel coapResponsePanel = new JPanel();
+        coapResponse = new JTextArea(10, 20);
+        coapResponse.setEditable(false);
+        coapResponsePanel.add(new JScrollPane(coapResponse, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
 
-    void setToken() {
-        while (true) {
-            clearScreen();
-            try {
-                System.out.println("Ange token för meddelande, tidagare värde: " + coapMessage.getToken());
-                coapMessage.setToken(reader.readLine());
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        JPanel coapRequestPanel = new JPanel();
+        coapRequest = new JTextArea(10, 20);
+        coapRequest.setEditable(false);
+        coapRequestPanel.add(new JScrollPane(coapRequest, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
 
-    void setPayload() {
-        while (true) {
-            clearScreen();
-            try {
-                System.out.println("Ange payload för meddelande, tidagare värde: " + coapMessage.getPayload());
-                coapMessage.setPayload(reader.readLine());
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+        JPanel leftVerticalPanel = new JPanel();
+        leftVerticalPanel.setLayout(new BoxLayout(leftVerticalPanel, BoxLayout.Y_AXIS));
+        leftVerticalPanel.add(new JLabel("Coap Request Bits"));
+        leftVerticalPanel.add(coapRequestBitsPanel);
+        leftVerticalPanel.add(new JLabel("Coap Response Bits"));
+        leftVerticalPanel.add(coapResponseBitsPanel);
 
-    void setCode() {
-        while (true) {
-            clearScreen();
-            try {
-                CoapCode[] codes = CoapCode.values();
-                System.out.println("Välj ett alternativ, tidigare värde: " + coapMessage.getCode());
-                for (int i = 1; i < codes.length + 1; i++) {
-                    System.out.println(i + "." + codes[i - 1]);
-                }
+        JPanel rightVerticalPanel = new JPanel();
+        rightVerticalPanel.setLayout(new BoxLayout(rightVerticalPanel, BoxLayout.Y_AXIS));
+        rightVerticalPanel.add(new JLabel("Coap request"));
+        rightVerticalPanel.add(coapRequestPanel);
+        rightVerticalPanel.add(new JLabel("Coap Response"));
+        rightVerticalPanel.add(coapResponsePanel);
 
-                coapMessage.setCode(CoapCode.get(Integer.parseInt(reader.readLine())));
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        middlePanel.add(gridpPanel);
+        middlePanel.add(rightVerticalPanel);
+        middlePanel.add(leftVerticalPanel);
+        mainContainer.add(middlePanel, BorderLayout.WEST);
     }
 
     void sendMessage(CoapMessage coapMessage) {
-        clearScreen();
+        this.message.resetOptions();
+        options.forEach((key, object) -> {
+            System.out.println("hej");
+            try {
+                message.addOption(object);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
 
+        }); 
         CoapMessageParser parser = new CoapMessageParser();
         byte[] data = parser.encode(coapMessage);
-        System.out.println("Sending packet: ");
-        CoapMessageParser.printCoapMessage(coapMessage);
+        coapRequest.setText(coapMessage.toString());
+        coapRequestBits.setText(ByteUtil.bytesToString(data));
+        coapResponseBits.setText(null);
+        coapResponse.setText(null);
         try {
             if (this.serverType == ServerType.UDP) {
 
-                byte[] receivePacket = MessageSenderUtil.udpSendAndRecieve(data, port, hostname, 1024);
-                System.out.println("Received packet: ");
-                CoapMessageParser.printCoapMessage(parser.parseCoapMessage(receivePacket));
+                MessageSenderUtil.udpSendAndRecieve(data, port, hostname, 1024, message -> {
+                    coapResponseBits.setText(ByteUtil.bytesToString(message));
+                    coapResponse.setText(parser.decode(message).toString());
+                });
             } else {
-                byte[] receivePacket = MessageSenderUtil.tcpSendAndReceive(data, port, hostname);
-                System.out.println("Received packet: ");
-                CoapMessageParser.printCoapMessage(parser.parseCoapMessage(receivePacket));
+
+                MessageSenderUtil.tcpSendAndReceive(data, port, hostname, message -> {
+                    coapResponseBits.setText(ByteUtil.bytesToString(message));
+                    coapResponse.setText(parser.decode(message).toString());
+                });
+        
             }
 
+     
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
-
-        pressKeyContinue(); 
+        updateMessageId();
     }
 
-    void pressKeyContinue() {
-        System.out.println("Press Enter key to continue...");
-        try
-        {
-            reader.readLine();
-        }  
-        catch(Exception e)
-        {}  
-    }
+    void addOption(CoapOptionNumberEnum optionNumber) {
+        Integer randomNumber = -1;
+        while(randomNumber == -1 || options.containsKey(randomNumber)) 
+            randomNumber = new Random().nextInt();
+        final Integer finalRandomNumber = randomNumber;
+        System.out.println("Random number" + finalRandomNumber);
+        try {
+            JPanel parent = gridpPanel;
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+            JButton removeButton = new JButton("Remove");
+            JLabel jLabel = new JLabel("" + optionNumber);
+            JTextField input = new JTextField();
 
-    void clearScreen() {
-        System.out.print("\033[H\033[2J");  
-        System.out.flush();  
+            removeButton.addActionListener(event -> {
+                parent.remove(panel);
+                options.remove(finalRandomNumber);
+                parent.revalidate();
+            });
+
+
+            SwingUtil.addChangeListener(input, message, (object, value) -> {
+
+                try {
+      
+                    options.put(finalRandomNumber, CoapOptionResolver.resolveOption(optionNumber, value.getBytes()));
+       
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            });
+
+            panel.add(jLabel);
+            panel.add(input);
+            panel.add(removeButton);
+
+            parent.add(panel);
+            parent.revalidate();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }

@@ -108,6 +108,15 @@ public class CoapMessage {
         }
         return this;
     }
+    public CoapMessage setOptions(SortedMap<CoapOptionNumberEnum, ArrayList<AbstractCoapOption<?>>> options) {
+        this.options = options;
+        return this;
+    }
+    public CoapMessage resetOptions() {
+        this.options = new TreeMap<CoapOptionNumberEnum, ArrayList<AbstractCoapOption<?>>>();
+        return this;
+    }
+
 
     public ArrayList<AbstractCoapOption<?>> getOptionsAsArray() {
         ArrayList<AbstractCoapOption<?>> options = new ArrayList<>();
@@ -127,5 +136,27 @@ public class CoapMessage {
     public CoapMessage setPayload(String payload) {
         this.payload = payload;
         return this;
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("CoapMessage:" + "\n");
+        builder.append("Coap code is: " + getCode() + "\n");
+        builder.append("Coap version is: " + getVersion() + "\n");
+        builder.append("Coap type is: " + getType() + "\n");
+        builder.append("Coap messageId:" + getMessageId() + "\n");
+        builder.append("Coap token: " + getToken() + "\n");
+        builder.append("Coap payload: " + getPayload() + "\n");
+
+        var options = getOptionsAsArray();
+
+        options.forEach(option -> {
+            builder.append("Coap option number: " + option.getNumber() +  " = " + option.getValue() + "\n");
+        });
+        
+        System.out.print("\n");
+        return builder.toString();
     }
 }

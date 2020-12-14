@@ -6,7 +6,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import server.listener.MessageCallback;
-import shared.config.ServerConfig;
 import shared.service.MessageParser;
 
 public class UDPMessageReceiver <Message> extends MessageReceiver<UDPMessageReceiver<Message>, Message>
@@ -17,12 +16,7 @@ public class UDPMessageReceiver <Message> extends MessageReceiver<UDPMessageRece
 
     public UDPMessageReceiver(MessageParser<Message> parser) {
         super(parser);
-        try {
-            datagramSocket = new DatagramSocket(ServerConfig.COAP_SERVER_PORT);
-            recievePacket = new DatagramPacket(buffer, buffer.length);
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+    
     }
 
     @Override
@@ -30,7 +24,7 @@ public class UDPMessageReceiver <Message> extends MessageReceiver<UDPMessageRece
         try {
             datagramSocket.receive(recievePacket);
             byte[] packetData = recievePacket.getData();
-            
+            System.out.println("Message Received");
             MessageCallback<Message> callback = message -> {
                 try {
                     InetAddress clientAddress = recievePacket.getAddress();
@@ -53,4 +47,20 @@ public class UDPMessageReceiver <Message> extends MessageReceiver<UDPMessageRece
         }
     }
 
+    @Override
+    protected void onInit() {
+        try {
+            datagramSocket = new DatagramSocket(port);
+            recievePacket = new DatagramPacket(buffer, buffer.length);
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        datagramSocket.close();
+    }
 }

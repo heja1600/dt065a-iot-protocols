@@ -21,6 +21,14 @@ public class ByteUtil {
         return builder.toString();
     }
 
+    public static String bytesToString(byte [] bytes) {
+        StringBuilder builder = new StringBuilder();
+        for(byte _byte : bytes) {
+            builder.append(ByteUtil.byteToString(_byte) + "\n");
+        }
+        return builder.toString();
+    }
+
     public static byte [] integerToByteArray(Integer value) {
         BigInteger bigInt = BigInteger.valueOf(value);
         return bigInt.toByteArray();
@@ -39,9 +47,7 @@ public class ByteUtil {
     }
 
     public static void printBytesAsString(byte [] bytes) {
-        for(byte _byte : bytes) {
-            System.out.println(ByteUtil.byteToString(_byte));
-        }
+        System.out.println(bytesToString(bytes));
     }
 
     public static int boolArrayToInteger(boolean [] bools) {

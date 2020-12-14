@@ -4,14 +4,14 @@ import java.util.Arrays;
 
 import server.listener.MessageCallback;
 import server.listener.ServerListener;
-import shared.config.ServerConfig;
 import shared.service.MessageParser;
 import shared.util.ByteUtil;
 
 public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Thread {
 
     private boolean runServer;
-    private int packetSize;
+    protected int packetSize;
+    protected Integer port;
 
     protected MessageParser<Message> parser;
     protected byte[] buffer;
@@ -19,9 +19,14 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
     private ServerListener<Message> serverListener;
 
     protected abstract void serverEventLoop();
-    
+
+    protected abstract void onInit();
+
+    protected abstract void onDestroy();
+
     @SuppressWarnings("unchecked")
-    MessageReceiver(MessageParser<Message> parser) {
+    MessageReceiver(MessageParser<Message> parser) {    
+
         this.parser = parser;
         try {
 
@@ -36,12 +41,14 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
 
     @Override
     public void run() {
+        onInit();
         runServer = true;
         while(runServer) {
-            System.out.println("Listening on port " + ServerConfig.COAP_SERVER_PORT);
+            System.out.println("Listening on port " + port);
             serverEventLoop();
         }
-        super.run();
+        onDestroy();
+
     }
     public void stopReceiving() {
         this.runServer = false;
@@ -60,6 +67,11 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
         return (ParentMessageReceiver) this;
     }
 
+    @SuppressWarnings("unchecked")
+    public ParentMessageReceiver setPort(int port) {
+        this.port = port;
+        return (ParentMessageReceiver) this;
+    }
 
     protected void triggerOnMessageRecieved(byte [] buffer, MessageCallback<Message> callback) {
         if(this.serverListener != null) {

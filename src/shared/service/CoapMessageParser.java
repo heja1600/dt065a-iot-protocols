@@ -17,41 +17,6 @@ import shared.util.ByteUtil;
 
 public class CoapMessageParser implements MessageParser<CoapMessage>{
   
-	@Override
-	public CoapMessage decode(byte[] buffer) {
-        CoapMessage coapMessage = new CoapMessage();
-        try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer)) {
-
-            int firstByte = byteArrayInputStream.read();
-
-            /** Set version */
-            coapMessage.setVersion((firstByte & 0xc0) >> 6); // 1100 0000
-
-            /** Set type */
-            coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
-
-            /** Set code */
-            coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
-            
-            /** Set Message id */
-            coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);
-            
-            /** Set token */
-            int tokenLength = firstByte & 0xf; // 0000 1111
-            coapMessage.setToken(new String(byteArrayInputStream.readNBytes(tokenLength)));
-  
-            /** Parse the options */
-            parseOptions(0, 0, byteArrayInputStream, coapMessage);
-         
-            /** Parse payload */
-            coapMessage.setPayload(new String(byteArrayInputStream.readAllBytes()));
-     
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        /** Get coap code */
-        return coapMessage;
-	}
 
 	@Override
 	public byte[] encode(CoapMessage message) {
@@ -172,7 +137,7 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
      * @param buffer
      * @return
      */
-    public CoapMessage parseCoapMessage(byte[] buffer) {
+    public CoapMessage decode(byte[] buffer) {
         CoapMessage coapMessage = new CoapMessage();
         try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer)) {
 
@@ -185,7 +150,7 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
             coapMessage.setType(CoapType.get((firstByte & 0x30) >> 4)); // 0011 0000
 
             /** Set code */
-            coapMessage.setCode(CoapCode.get((byte)byteArrayInputStream.read()));
+            coapMessage.setCode(CoapCode.get(byteArrayInputStream.read()));
             
             /** Set Message id */
             coapMessage.setMessageId(ByteUtil.byteArrayToInteger(byteArrayInputStream.readNBytes(2)) & 0xffff);

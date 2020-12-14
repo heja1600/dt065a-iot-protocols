@@ -8,11 +8,11 @@ import shared.model.mqtt.MqttControlPacketType;
 import shared.model.mqtt.MqttMessage;
 import shared.model.mqtt.MqttQoS;
 
-public class MqttMessageParser implements MessageParser<MqttMessage>{
+public class MqttMessageParser implements MessageParser<MqttMessage<?>>{
 
 	@Override
-	public MqttMessage decode(byte[] buffer) {
-        MqttMessage message = new MqttMessage();
+	public MqttMessage<?> decode(byte[] buffer) {
+        MqttMessage<?> message = new MqttMessage(); 
         try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer)){
 
             int firstByte = byteArrayInputStream.read();
@@ -38,7 +38,7 @@ public class MqttMessageParser implements MessageParser<MqttMessage>{
 	}
 
 	@Override
-	public byte[] encode(MqttMessage message) {
+	public byte[] encode(MqttMessage<?> message) {
 
         byte [] buffer = null;
 		try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
@@ -85,7 +85,7 @@ public class MqttMessageParser implements MessageParser<MqttMessage>{
      * @param message
      * @param byteArrayOutputStream
      */
-    private byte [] encodeConnectMessage(MqttMessage message) {
+    private byte [] encodeConnectMessage(MqttMessage<?> message) {
         byte [] buffer = null;
     	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
             /** Connect packer variable header */
