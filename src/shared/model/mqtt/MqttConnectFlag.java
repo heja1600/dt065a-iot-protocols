@@ -12,7 +12,7 @@ public class MqttConnectFlag {
     boolean reserved = false;
 
     public int get() {
-        return ByteUtil.boolArrayToInteger(new boolean[] {
+        return ByteUtil.boolArrayToInteger(
             UserNameFlag, 
             PasswordFlag, 
             willFlagFlag, 
@@ -21,7 +21,7 @@ public class MqttConnectFlag {
             willFlagFlag,
             cleanSessionFlag,
             reserved
-        });
+        );
     }
 
 	public boolean isUserNameFlag() {

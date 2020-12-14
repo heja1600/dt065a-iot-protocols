@@ -50,7 +50,7 @@ public class ByteUtil {
         System.out.println(bytesToString(bytes));
     }
 
-    public static int boolArrayToInteger(boolean [] bools) {
+    public static int boolArrayToInteger(boolean ... bools) {
         byte val = 0;
         for(int i = 0; i < bools.length; i++) {
             val <<= 1;
