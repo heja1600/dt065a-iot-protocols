@@ -12,12 +12,12 @@ public class MessageHandler {
 
 
         System.out.println("Received packet: ");
-        CoapMessageParser.printCoapMessage(message);
-        CoapMessageParser.printCoapMessage(message);
+        System.out.println(message);
+        System.out.println(message);
 
         CoapMessage responseMessage = new CoapMessage().setCode(CoapCode.BAD_REQUEST);
         System.out.println("Sending back packet");
-        CoapMessageParser.printCoapMessage(responseMessage);
+        System.out.println(responseMessage);
         return responseMessage;
         // if(message.getCode() == null) {
         //     System.out.println("Tomt message");

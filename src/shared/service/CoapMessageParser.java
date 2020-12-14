@@ -278,26 +278,4 @@ public class CoapMessageParser implements MessageParser<CoapMessage>{
         );
     }
 
-
-
-    public static void printCoapMessage(CoapMessage coapMessage) {
-        CoapMessageParser parser = new CoapMessageParser();
-        byte [] bytes = parser.encode(coapMessage);
-        System.out.println("Bits:");
-        ByteUtil.printBytesAsString(bytes);
-        System.out.println("CoapMessage:");
-        System.out.println("Coap code is: " + coapMessage.getCode());
-        System.out.println("Coap version is: " + coapMessage.getVersion());
-        System.out.println("Coap type is: " + coapMessage.getType());
-        System.out.println("Coap messageId:" + coapMessage.getMessageId());
-        System.out.println("Coap token: " + coapMessage.getToken());
-
-        var options = coapMessage.getOptionsAsArray();
-        options.forEach(option -> {
-            System.out.println("Coap option number: " + option.getNumber() +  " = " + option.getValue());
-        });
-        
-        System.out.println("Coap payload: " + coapMessage.getPayload());
-        System.out.print("\n");
-    }
 }

@@ -2,6 +2,9 @@ package shared.model.mqtt;
 
 import shared.model.mqtt.packet.AbstractMqttControlPacket;
 
+
+/** Implementation of MQTT 3.1.1 */
+
 public class MqttMessage<Packet extends AbstractMqttControlPacket> {
 
     private MqttControlPacketType mqttMessageType;
