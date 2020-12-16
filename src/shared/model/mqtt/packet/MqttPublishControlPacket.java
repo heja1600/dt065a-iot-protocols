@@ -1,24 +1,24 @@
 package shared.model.mqtt.packet;
 
-import shared.model.mqtt.MqttConnectFlag;
+import shared.model.mqtt.MqttPublishFlag;
 import shared.model.mqtt.MqttControlPacketType;
 import shared.model.mqtt.MqttQoS;
 
 public class MqttPublishControlPacket extends AbstractMqttControlPacket {
-    private Integer qos;
+    private boolean retain;
     private String topic;
-    private MqttConnectFlag connectFlag;
+    private MqttPublishFlag connectFlag;
 
     public MqttPublishControlPacket() {
         super(MqttControlPacketType.PUBLISH);
-        qos = 0;
         topic = "HEJ";
-        connectFlag = new MqttConnectFlag();
+        retain = false;
+        connectFlag = new MqttPublishFlag();
     }
 
-    public MqttConnectFlag getPublishFlag() {
+    public MqttPublishFlag getPublishFlag() {
         if (this.connectFlag == null) {
-            this.connectFlag = new MqttConnectFlag().setDupFlag().setMqttQoS(MqttQoS.AT_MOST_ONCE);
+            this.connectFlag = new MqttPublishFlag().setDupFlag().setMqttQoS(MqttQoS.AT_MOST_ONCE);
 
         }
         return this.connectFlag;
@@ -34,12 +34,12 @@ public class MqttPublishControlPacket extends AbstractMqttControlPacket {
         return this;
     }
 
-    public Integer getQos() {
-        return qos;
+    public boolean getRetain() {
+        return retain;
     }
 
-    public MqttPublishControlPacket setQos(Integer qos) {
-        this.qos = qos;
+    public MqttPublishControlPacket setRetain() {
+        this.retain = true;
         return this;
     }
 

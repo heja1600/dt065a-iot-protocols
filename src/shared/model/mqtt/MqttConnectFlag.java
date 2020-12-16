@@ -8,7 +8,6 @@ public class MqttConnectFlag {
 	boolean willRetainFlag = false;
 	MqttQoS mqttQoS = MqttQoS.AT_MOST_ONCE;
 	boolean willFlag = false;
-	boolean dupFlag = false;
 	/**
 	 * If CleanSession is set to 0, the Server MUST resume communications with the
 	 * Client based on state from the current Session (as identified by the Client
@@ -31,7 +30,7 @@ public class MqttConnectFlag {
 
 	public int get() {
 		return ByteUtil.boolArrayToInteger(UserNameFlag, PasswordFlag, willRetainFlag, (mqttQoS.get() & 2) == 2,
-				(mqttQoS.get() & 1) == 1, willFlag, cleanSessionFlag, reserved, dupFlag);
+				(mqttQoS.get() & 1) == 1, willFlag, cleanSessionFlag, reserved);
 	}
 
 	public boolean isUserNameFlag() {
@@ -94,15 +93,6 @@ public class MqttConnectFlag {
 
 	public MqttConnectFlag setReserved() {
 		this.reserved = true;
-		return this;
-	}
-
-	public boolean isDupFlag() {
-		return dupFlag;
-	}
-
-	public MqttConnectFlag setDupFlag() {
-		this.dupFlag = true;
 		return this;
 	}
 }
