@@ -3,8 +3,8 @@ package shared.model.mqtt;
 import shared.util.ByteUtil;
 
 public class MqttConnectFlag {
-	boolean UserNameFlag = false;
-	boolean PasswordFlag = false;
+	boolean userNameFlag = false;
+	boolean passwordFlag = false;
 	boolean willRetainFlag = false;
 	MqttQoS mqttQoS = MqttQoS.AT_MOST_ONCE;
 	boolean willFlag = false;
@@ -30,8 +30,8 @@ public class MqttConnectFlag {
 
 	public int get() {
 		return ByteUtil.boolArrayToInteger(
-            UserNameFlag, 
-            PasswordFlag, 
+            userNameFlag, 
+            passwordFlag, 
             willRetainFlag, 
             (mqttQoS.get() & 2) == 2,
             (mqttQoS.get() & 1) == 1, 
@@ -41,21 +41,30 @@ public class MqttConnectFlag {
         );
 	}
 
+    public MqttConnectFlag set(int bit) {
+        this.userNameFlag = ((bit & 0b10000000) >> 7) == 1;
+        this.passwordFlag = ((bit & 0b01000000) >> 6) == 1;
+        this.willRetainFlag = ((bit & 0b00100000) >> 5) == 1;
+        this.mqttQoS = MqttQoS.get(bit & 0b00011000);
+        this.willFlag = ((bit & 0b00000100) >> 2) == 1;
+        this.cleanSessionFlag = ((bit & 0b00000010) >> 1) == 1;
+        return this;
+    }
 	public boolean isUserNameFlag() {
-		return UserNameFlag;
+		return userNameFlag;
 	}
 
 	public MqttConnectFlag setUserNameFlag() {
-		UserNameFlag = true;
+		userNameFlag = true;
 		return this;
 	}
 
 	public boolean isPasswordFlag() {
-		return PasswordFlag;
+		return passwordFlag;
 	}
 
 	public MqttConnectFlag setPasswordFlag() {
-		PasswordFlag = true;
+		passwordFlag = true;
 		return this;
 	}
 

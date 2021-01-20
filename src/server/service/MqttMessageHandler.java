@@ -6,7 +6,7 @@ public class MqttMessageHandler {
     public MqttMessageHandler() {
 
     }
-    public MqttMessage<?> handleMessage(MqttMessage<?> message) {
+    public MqttMessage handleMessage(MqttMessage message) {
 
 
         System.out.println("Received packet: ");

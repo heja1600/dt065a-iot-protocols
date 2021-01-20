@@ -8,7 +8,7 @@ public class MqttClientProgram {
     
     MQTTBrokerServer server;
     public static void main(String [] args) {
-        MqttMessage<MqttConnectControlPacket> message = new MqttMessage<MqttConnectControlPacket>()
+        MqttMessage message = new MqttMessage()
             .setPacket(
                 new MqttConnectControlPacket()
             );

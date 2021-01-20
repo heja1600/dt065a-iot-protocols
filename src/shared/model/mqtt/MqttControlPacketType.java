@@ -5,6 +5,7 @@ import java.util.Map;
 
 public enum MqttControlPacketType {
     CONNECT(1),
+    CONNACK(2),
     PUBLISH(3),
     SUBCRIBE(8),
     UNSUBSCRIBE(10),

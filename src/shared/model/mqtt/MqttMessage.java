@@ -2,33 +2,32 @@ package shared.model.mqtt;
 
 import shared.model.mqtt.packet.AbstractMqttControlPacket;
 
-
 /** Implementation of MQTT 3.1.1 */
 
-public class MqttMessage<Packet extends AbstractMqttControlPacket> {
+public class MqttMessage {
 
-    private MqttControlPacketType mqttMessageType;
+    private MqttControlPacketType mqttControlPacketType;
     private boolean DUPFlag;
     private boolean retainFlag;
     private MqttQoS mqttQoS;
     private Integer remainingLength;
     
-    private Packet packet;
+    private AbstractMqttControlPacket packet;
 
     
     public MqttMessage() {
         DUPFlag = false;
-        mqttMessageType = null;
+        mqttControlPacketType = null;
         retainFlag = false;
         mqttQoS = MqttQoS.AT_MOST_ONCE;
     }
     
-    public MqttControlPacketType getMqttMessageType() {
-        return this.mqttMessageType;
+    public MqttControlPacketType getMqttControlPacketType() {
+        return this.mqttControlPacketType;
     }
 
-    public MqttMessage<Packet> setMqttMessageType(MqttControlPacketType mqttMessageType) {
-        this.mqttMessageType = mqttMessageType;
+    public MqttMessage setMqttControlPacketType(MqttControlPacketType mqttControlPacketType) {
+        this.mqttControlPacketType = mqttControlPacketType;
         return this;
     }
 
@@ -40,7 +39,7 @@ public class MqttMessage<Packet extends AbstractMqttControlPacket> {
         return this.DUPFlag;
     }
 
-    public MqttMessage<Packet> setDUPFlag(boolean DUPFlag) {
+    public MqttMessage setDUPFlag(boolean DUPFlag) {
         this.DUPFlag = DUPFlag;
         return this;
     }
@@ -48,7 +47,7 @@ public class MqttMessage<Packet extends AbstractMqttControlPacket> {
         return this.mqttQoS;
     }
 
-    public MqttMessage<Packet> setMqttQoS(MqttQoS mqttQoS) {
+    public MqttMessage setMqttQoS(MqttQoS mqttQoS) {
         this.mqttQoS = mqttQoS;
         return this;
     }
@@ -57,7 +56,7 @@ public class MqttMessage<Packet extends AbstractMqttControlPacket> {
 		return retainFlag;
 	}
 
-	public MqttMessage<Packet> setRetainFlag(boolean retainFlag) {
+	public MqttMessage setRetainFlag(boolean retainFlag) {
         this.retainFlag = retainFlag;
         return this;
 	}
@@ -66,7 +65,7 @@ public class MqttMessage<Packet extends AbstractMqttControlPacket> {
 		return remainingLength;
 	}
 
-	public MqttMessage<Packet> setRemainingLength(Integer remainingLength) throws Exception {
+	public MqttMessage setRemainingLength(Integer remainingLength) throws Exception {
         if(remainingLength < 0x0 || remainingLength > 0x4) {
             throw new Exception("Remaining length has to be between 1-4 bytes");
         }
@@ -74,12 +73,19 @@ public class MqttMessage<Packet extends AbstractMqttControlPacket> {
         return this;
 	}
 
-    public Packet getPacket() {
+    public AbstractMqttControlPacket getPacket() {
         return packet;
     }
 
-    public MqttMessage<Packet> setPacket(Packet packet) {
+    public MqttMessage setPacket(AbstractMqttControlPacket packet) {
         this.packet = packet;
         return this;
+    }
+
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return super.toString();
     }
 }

@@ -2,7 +2,7 @@ package shared.model.mqtt;
 
 import java.util.HashMap;
 import java.util.Map;
-// Quality of service
+// Quality of service, 2 bits
 public enum MqttQoS {
     AT_MOST_ONCE(0),
     AT_LEAST_ONCE(1),

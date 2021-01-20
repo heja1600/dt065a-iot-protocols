@@ -4,19 +4,19 @@ import server.listener.ExtendedServerListener;
 import server.listener.MessageCallback;
 import server.listener.ServerListener;
 import server.service.MqttMessageHandler;
-import server.service.UDPMessageReceiver;
+import server.service.TCPMessageReceiver;
 import shared.config.ServerConfig;
 import shared.model.mqtt.MqttMessage;
 import shared.service.MqttMessageParser;
 
-public class MQTTBrokerServer implements ServerListener<MqttMessage<?>> {
+public class MQTTBrokerServer implements ServerListener<MqttMessage> {
 
-    UDPMessageReceiver<MqttMessage<?>> messageReceiver;
-    ExtendedServerListener<MqttMessage<?>> serverListener;
+    TCPMessageReceiver<MqttMessage> messageReceiver;
+    ExtendedServerListener<MqttMessage> serverListener;
     MqttMessageHandler serverHandler;
     public MQTTBrokerServer() {
         serverHandler = new MqttMessageHandler();
-        messageReceiver = new UDPMessageReceiver<>(new MqttMessageParser())
+        messageReceiver = new TCPMessageReceiver<>(new MqttMessageParser())
             .setListener(this)
             .setPacketLength(1024)
             .setPort(ServerConfig.MQTT_SERVER_PORT);
@@ -28,12 +28,12 @@ public class MQTTBrokerServer implements ServerListener<MqttMessage<?>> {
     }
 
     @Override
-    public void onMessageReceived(MqttMessage<?> message, MessageCallback<MqttMessage<?>> callback) {
+    public void onMessageReceived(MqttMessage message, MessageCallback<MqttMessage> callback) {
         if(this.serverListener != null){
             this.serverListener.onMessageReceived(message);
         }
 
-        MqttMessage<?> responseMessage = serverHandler.handleMessage(message);
+        MqttMessage responseMessage = serverHandler.handleMessage(message);
 
         if(this.serverListener != null){
             this.serverListener.onMessageSent(responseMessage);
