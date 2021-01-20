@@ -8,11 +8,17 @@
 - Extended Options
 - A client and a server program to test the CoAP logic
 
+
+## Testing tools
+- [Mqtt fx](https://mqttfx.jensd.de/)
+- [Wireshark](https://www.wireshark.org/download.html)
+
 ## Documentation
 
 - [Ascii](http://www.asciitable.com/)
 - [Bit/Hex/dec Converter](https://www.mathsisfun.com/binary-decimal-hexadecimal-converter.html)
 - [RFC 7252 - The Constrained Application Protocol (CoAP)](https://tools.ietf.org/html/rfc7252)
+- [RFC MQTT v3.1.1](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)
 
 
 

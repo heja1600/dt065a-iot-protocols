@@ -2,10 +2,9 @@ package server.service;
 
 import shared.model.coap.CoapCode;
 import shared.model.coap.CoapMessage;
-import shared.service.CoapMessageParser;
 
-public class MessageHandler {
-    public MessageHandler() {
+public class CoapMessageHandler {
+    public CoapMessageHandler() {
 
     }
     public CoapMessage handleMessage(CoapMessage message) {

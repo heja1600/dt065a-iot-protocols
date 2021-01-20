@@ -29,8 +29,16 @@ public class MqttConnectFlag {
 								// is set to zero and disconnect the Client if it is not zero
 
 	public int get() {
-		return ByteUtil.boolArrayToInteger(UserNameFlag, PasswordFlag, willRetainFlag, (mqttQoS.get() & 2) == 2,
-				(mqttQoS.get() & 1) == 1, willFlag, cleanSessionFlag, reserved);
+		return ByteUtil.boolArrayToInteger(
+            UserNameFlag, 
+            PasswordFlag, 
+            willRetainFlag, 
+            (mqttQoS.get() & 2) == 2,
+            (mqttQoS.get() & 1) == 1, 
+            willFlag, 
+            cleanSessionFlag, 
+            reserved
+        );
 	}
 
 	public boolean isUserNameFlag() {

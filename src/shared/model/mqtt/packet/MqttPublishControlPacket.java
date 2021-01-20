@@ -1,7 +1,7 @@
 package shared.model.mqtt.packet;
 
-import shared.model.mqtt.MqttPublishFlag;
 import shared.model.mqtt.MqttControlPacketType;
+import shared.model.mqtt.MqttPublishFlag;
 import shared.model.mqtt.MqttQoS;
 
 public class MqttPublishControlPacket extends AbstractMqttControlPacket {
@@ -11,7 +11,6 @@ public class MqttPublishControlPacket extends AbstractMqttControlPacket {
 
     public MqttPublishControlPacket() {
         super(MqttControlPacketType.PUBLISH);
-        topic = "HEJ";
         retain = false;
         connectFlag = new MqttPublishFlag();
     }

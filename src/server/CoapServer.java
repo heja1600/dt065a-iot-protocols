@@ -3,7 +3,7 @@ package server;
 import server.listener.ExtendedServerListener;
 import server.listener.MessageCallback;
 import server.listener.ServerListener;
-import server.service.MessageHandler;
+import server.service.CoapMessageHandler;
 import server.service.MessageReceiver;
 import shared.config.ServerConfig;
 import shared.model.coap.CoapMessage;
@@ -14,13 +14,13 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements Se
         UDP, TCP;
     }
     ExtendedServerListener<CoapMessage> serverListener;
-    MessageHandler serverHandler;
+    CoapMessageHandler serverHandler;
     T messageReceiver;
 
     boolean running = false;
     public CoapServer(T messageReceiver) {
         try {
-            serverHandler = new MessageHandler();
+            serverHandler = new CoapMessageHandler();
             this.messageReceiver = messageReceiver;
             messageReceiver
                 .setListener(this)
