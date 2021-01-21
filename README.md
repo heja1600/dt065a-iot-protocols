@@ -7,6 +7,7 @@
 - Multiple options
 - Extended Options
 - A client and a server program to test the CoAP logic
+- A Mqtt Broker managing clients & encoding and decoding of most messages
 
 
 ## Testing tools
