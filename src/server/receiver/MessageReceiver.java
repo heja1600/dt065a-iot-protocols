@@ -1,11 +1,7 @@
 package server.receiver;
 
-import java.util.Arrays;
-
-import listener.MessageReceiverCallback;
-import listener.ServerListener;
+import listener.ClientConnectListener;
 import parser.MessageParser;
-import util.ByteUtil;
 
 public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Thread {
 
@@ -16,7 +12,7 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
     protected MessageParser<Message> parser;
     protected byte[] buffer;
 
-    private ServerListener<Message> serverListener;
+    protected ClientConnectListener<Message> clientConnectListener;
 
     protected abstract void serverEventLoop();
 
@@ -62,8 +58,8 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
 
 
     @SuppressWarnings("unchecked")
-    public ParentMessageReceiver setListener(ServerListener<Message> serverListener) {
-        this.serverListener = serverListener;
+    public ParentMessageReceiver setListener(ClientConnectListener<Message> clientConnectListener) {
+        this.clientConnectListener = clientConnectListener;
         return (ParentMessageReceiver) this;
     }
 
@@ -73,12 +69,4 @@ public abstract class MessageReceiver<ParentMessageReceiver, Message> extends Th
         return (ParentMessageReceiver) this;
     }
 
-    protected void triggerOnMessageRecieved(byte [] buffer, MessageReceiverCallback<Message> callback) {
-        if(this.serverListener != null) {
-            ByteUtil.printBytesAsString(Arrays.copyOf(buffer, 10));
-            Message message = this.parser.decode(buffer);
-            serverListener.onMessageReceived(message, callback);
-        }
-    }
-    
 }

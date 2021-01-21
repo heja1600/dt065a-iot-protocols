@@ -35,7 +35,7 @@ public class MessageSenderUtil {
                     DatagramPacket receivePacket = new DatagramPacket(new byte[recieveSize], recieveSize);
                     datagramSocket.receive(receivePacket);
                     datagramSocket.close();
-                    callback.respond(receivePacket.getData());
+                    callback.send(receivePacket.getData());
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -67,7 +67,7 @@ public class MessageSenderUtil {
             new Thread(new Runnable(){
                 public void run(){
                     try {
-                        callback.respond(socket.getInputStream().readAllBytes());
+                        callback.send(socket.getInputStream().readAllBytes());
                         socket.close();
                         System.out.println("sendign back");
                     } catch (IOException e) {

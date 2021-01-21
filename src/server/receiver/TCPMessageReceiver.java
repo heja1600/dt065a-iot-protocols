@@ -7,52 +7,66 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import listener.MessageReceiverCallback;
+import listener.Callback;
+import listener.MessageReceiverListener;
 import parser.MessageParser;
 
-public class TCPMessageReceiver <Message> extends MessageReceiver<TCPMessageReceiver<Message>, Message> 
-{   
-    
+public class TCPMessageReceiver<Message> extends MessageReceiver<TCPMessageReceiver<Message>, Message> {
+
     ServerSocket serverSocket;
+
+
     public TCPMessageReceiver(MessageParser<Message> parser) {
         super(parser);
-   
+
     }
 
+    
     @Override
     protected void serverEventLoop() {
         try {
             Socket socket = serverSocket.accept();
             OutputStream outputStream = socket.getOutputStream();
             InputStream inputStream = socket.getInputStream();
-            inputStream.read(buffer);
-            MessageReceiverCallback<Message> callback = new MessageReceiverCallback<Message>() {
-                
-				@Override
-				public void respond(Message message) {
-                    try {
-                        byte [] buffer = parser.encode(message);
-                        outputStream.write(buffer);
-                        socket.close();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-					
-				}
 
-				@Override
-				public void close() {
-					try {
+            MessageReceiverListener<Message> connectionReceiver = new MessageReceiverListener<>() {
+                @Override
+                public void receivePacket(Callback<Message> callback) {
+                    new Thread(() -> {
+                        while(!socket.isClosed()) {
+                            try {
+                                inputStream.read(buffer);
+                                callback.call(parser.decode(buffer));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                }
+
+                @Override
+                public void close() {
+                    try {
                         socket.close();
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-				}  
+                }
+
+                @Override
+                public void send(Message message) {
+                    byte [] buffer = parser.encode(message);
+                    try {
+                        outputStream.write(buffer);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             };
-  
-            this.triggerOnMessageRecieved(buffer, callback);
+            if(clientConnectListener != null) {
+                clientConnectListener.onClientConnect(connectionReceiver);
+            }
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

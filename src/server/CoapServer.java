@@ -1,31 +1,30 @@
 package server;
 
 import config.ServerConfig;
-import listener.ExtendedServerListener;
-import listener.MessageReceiverCallback;
+import listener.ClientConnectListener;
+import listener.ClientConnectionListener;
 import listener.ServerListener;
 import model.coap.CoapMessage;
 import server.handler.CoapMessageHandler;
 import server.receiver.MessageReceiver;
 
-public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements ServerListener<CoapMessage> {
+public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements ClientConnectListener<CoapMessage> {
 
     public enum ServerType {
         UDP, TCP;
     }
-    ExtendedServerListener<CoapMessage> serverListener;
+
+    ServerListener<CoapMessage> serverListener;
     CoapMessageHandler serverHandler;
     T messageReceiver;
 
     boolean running = false;
+
     public CoapServer(T messageReceiver) {
         try {
             serverHandler = new CoapMessageHandler();
             this.messageReceiver = messageReceiver;
-            messageReceiver
-                .setListener(this)
-                .setPacketLength(1024)
-                .setPort(ServerConfig.COAP_SERVER_PORT);
+            messageReceiver.setListener(this).setPacketLength(1024).setPort(ServerConfig.COAP_SERVER_PORT);
 
         } catch (Exception e) {
             // TODO Auto-generated catch block
@@ -33,10 +32,11 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements Se
         }
     }
 
-    public CoapServer<T> setListener(ExtendedServerListener<CoapMessage> serverListener) {
+    public CoapServer<T> setListener(ServerListener<CoapMessage> serverListener) {
         this.serverListener = serverListener;
         return this;
     }
+
     public void startServer() {
         running = true;
         messageReceiver.start();
@@ -51,20 +51,23 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements Se
         return running;
     }
 
+
     @Override
-    public void onMessageReceived(CoapMessage message, MessageReceiverCallback<CoapMessage> callback) {
-        if(this.serverListener != null){
-            this.serverListener.onMessageReceived(message);
-        }
+    public void onClientConnect(ClientConnectionListener<CoapMessage> connection) {
+        connection.receivePacket(message -> {
+            if (this.serverListener != null) {
+                this.serverListener.onMessageReceived(message);
+            }
 
-        CoapMessage responseMessage = serverHandler.handleMessage(message);
+            CoapMessage responseMessage = serverHandler.handleMessage(message);
 
-        if(this.serverListener != null){
-            this.serverListener.onMessageSent(responseMessage);
-        }
-
-        callback.respond(responseMessage);
-      
+            if (this.serverListener != null) {
+                this.serverListener.onMessageSent(responseMessage);
+            }
+    
+            connection.send(responseMessage);
+            connection.close();
+        });
     }
 }
 

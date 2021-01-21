@@ -14,7 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import listener.ExtendedServerListener;
+import listener.ServerListener;
 import model.coap.CoapMessage;
 import parser.CoapMessageParser;
 import server.CoapServer;
@@ -24,7 +24,7 @@ import server.receiver.UDPMessageReceiver;
 import util.ByteUtil;
 import util.SwingUtil;
 
-public class CoapServerApplication extends JFrame implements ExtendedServerListener<CoapMessage> {
+public class CoapServerApplication extends JFrame implements ServerListener<CoapMessage> {
     /**
      *
      */
