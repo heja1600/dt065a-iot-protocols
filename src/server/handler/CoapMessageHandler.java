@@ -1,0 +1,46 @@
+package server.handler;
+
+import model.coap.CoapCode;
+import model.coap.CoapMessage;
+
+public class CoapMessageHandler {
+    public CoapMessageHandler() {
+
+    }
+    public CoapMessage handleMessage(CoapMessage message) {
+
+
+        System.out.println("Received packet: ");
+        System.out.println(message);
+        System.out.println(message);
+
+        CoapMessage responseMessage = new CoapMessage().setCode(CoapCode.BAD_REQUEST);
+        System.out.println("Sending back packet");
+        System.out.println(responseMessage);
+        return responseMessage;
+        // if(message.getCode() == null) {
+        //     System.out.println("Tomt message");
+        //     new CoapMessage().setCode(CoapCode.BAD_REQUEST);
+        // }
+
+        // switch(message.getCode()) {
+        //     case GET: {
+        //         break;		
+        //     }
+        //     case POST: {
+        //         break;		
+
+        //     }
+        //     case PUT: {
+        //         break;		
+
+        //     }
+        //     case DELETE: {
+        //         break;		
+
+        //     }
+        //     default:
+        //         break;
+        // }
+    }
+}

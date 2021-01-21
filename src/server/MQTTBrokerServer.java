@@ -1,13 +1,13 @@
 package server;
 
-import server.listener.ExtendedServerListener;
-import server.listener.MessageCallback;
-import server.listener.ServerListener;
-import server.service.MqttMessageHandler;
-import server.service.TCPMessageReceiver;
-import shared.config.ServerConfig;
-import shared.model.mqtt.MqttMessage;
-import shared.service.MqttMessageParser;
+import config.ServerConfig;
+import listener.ExtendedServerListener;
+import listener.MessageReceiverCallback;
+import listener.ServerListener;
+import model.mqtt.MqttMessage;
+import parser.MqttMessageParser;
+import server.handler.MqttMessageHandler;
+import server.receiver.TCPMessageReceiver;
 
 public class MQTTBrokerServer implements ServerListener<MqttMessage> {
 
@@ -28,17 +28,21 @@ public class MQTTBrokerServer implements ServerListener<MqttMessage> {
     }
 
     @Override
-    public void onMessageReceived(MqttMessage message, MessageCallback<MqttMessage> callback) {
+    public void onMessageReceived(MqttMessage message, MessageReceiverCallback<MqttMessage> callback) {
         if(this.serverListener != null){
             this.serverListener.onMessageReceived(message);
         }
+        try {
+            MqttMessage responseMessage = serverHandler.handleMessage(message);
 
-        MqttMessage responseMessage = serverHandler.handleMessage(message);
-
-        if(this.serverListener != null){
-            this.serverListener.onMessageSent(responseMessage);
+            if(this.serverListener != null){
+                this.serverListener.onMessageSent(responseMessage);
+            }
+            
+            callback.respond(responseMessage);
+        } catch(Exception e) {
+            callback.close();
         }
 
-        callback.respond(serverHandler.handleMessage(responseMessage));
     }
 }

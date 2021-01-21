@@ -1,12 +1,12 @@
 package server;
 
-import server.listener.ExtendedServerListener;
-import server.listener.MessageCallback;
-import server.listener.ServerListener;
-import server.service.CoapMessageHandler;
-import server.service.MessageReceiver;
-import shared.config.ServerConfig;
-import shared.model.coap.CoapMessage;
+import config.ServerConfig;
+import listener.ExtendedServerListener;
+import listener.MessageReceiverCallback;
+import listener.ServerListener;
+import model.coap.CoapMessage;
+import server.handler.CoapMessageHandler;
+import server.receiver.MessageReceiver;
 
 public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements ServerListener<CoapMessage> {
 
@@ -52,7 +52,7 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements Se
     }
 
     @Override
-    public void onMessageReceived(CoapMessage message, MessageCallback<CoapMessage> callback) {
+    public void onMessageReceived(CoapMessage message, MessageReceiverCallback<CoapMessage> callback) {
         if(this.serverListener != null){
             this.serverListener.onMessageReceived(message);
         }
@@ -63,7 +63,7 @@ public class CoapServer<T extends MessageReceiver<T, CoapMessage>> implements Se
             this.serverListener.onMessageSent(responseMessage);
         }
 
-        callback.respond(serverHandler.handleMessage(responseMessage));
+        callback.respond(responseMessage);
       
     }
 }
