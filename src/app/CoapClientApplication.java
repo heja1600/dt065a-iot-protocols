@@ -160,7 +160,6 @@ public class CoapClientApplication extends JFrame {
 
         SwingUtil.addChangeListener(messageIdComponent, message, (message, value) -> {
             try {
-                System.out.println(value);
                 if (value.isBlank()) {
                     message.setMessageId(0);
                 } else {
@@ -225,7 +224,6 @@ public class CoapClientApplication extends JFrame {
     void sendMessage(CoapMessage coapMessage) {
         this.message.resetOptions();
         options.forEach((key, object) -> {
-            System.out.println("hej");
             try {
                 message.addOption(object);
             } catch (Exception e) {
@@ -269,7 +267,6 @@ public class CoapClientApplication extends JFrame {
         while(randomNumber == -1 || options.containsKey(randomNumber)) 
             randomNumber = new Random().nextInt();
         final Integer finalRandomNumber = randomNumber;
-        System.out.println("Random number" + finalRandomNumber);
         try {
             JPanel parent = gridpPanel;
             JPanel panel = new JPanel();

@@ -24,10 +24,22 @@ public class MqttConnAckControlPacket extends AbstractMqttControlPacket {
      */
     private boolean sessionPresentFlag;
 
+
+
 	public MqttConnAckControlPacket() {
-        super(MqttControlPacketType.CONNACK);
+        
         mqttConnectReturnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
         sessionPresentFlag = false;
+    }
+
+    @Override
+    public MqttControlPacketType getType() {
+        return MqttControlPacketType.CONNACK;
+    }
+
+    @Override
+    public int getFixedHeaderFlags() {
+        return 0;
     }
 
     public MqttConnectReturnCode getMqttConnectReturnCode() {
@@ -127,4 +139,8 @@ public class MqttConnAckControlPacket extends AbstractMqttControlPacket {
             return lookup.get( mqttConnectReturnCode);
         }
     }
+
+
+
+
 }

@@ -5,15 +5,13 @@ import model.mqtt.MqttControlPacketType;
 public abstract class AbstractMqttControlPacket {
 
     MqttControlPacketType type;
+    
+    public abstract MqttControlPacketType getType();
 
-    public AbstractMqttControlPacket(MqttControlPacketType type) {
-        this.setType(type);
-    }
-    public MqttControlPacketType getType() {
-        return type;
-    }
+    public abstract int getFixedHeaderFlags();
 
-    private void setType(MqttControlPacketType type) {
-        this.type = type;
+    @Override
+    public String toString() {
+        return "";
     }
 }

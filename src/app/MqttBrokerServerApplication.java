@@ -1,16 +1,15 @@
 package app;
 
-import server.MQTTBrokerServer;
+import server.MqttBrokerServer;
 
 public class MqttBrokerServerApplication {
 
-    MQTTBrokerServer server;
+    MqttBrokerServer server;
     public static void main( String [] args){
         new MqttBrokerServerApplication();
     }
 
     public MqttBrokerServerApplication(){
-        server = new MQTTBrokerServer();
-        
+        server = new MqttBrokerServer();
     }
 }

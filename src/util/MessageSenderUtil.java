@@ -6,7 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import listener.MessageCallback;
+import listener.UniformCallback;
 
 public class MessageSenderUtil {
     public static void udpSendMessage(byte[] buffer, int port, String hostname) throws Exception {
@@ -22,7 +22,7 @@ public class MessageSenderUtil {
         int port, 
         String hostname, 
         int recieveSize, 
-        MessageCallback<byte[]> callback
+        UniformCallback<byte[]> callback
     ) throws IOException {
         DatagramSocket datagramSocket = new DatagramSocket();
         InetAddress address = InetAddress.getByName(hostname);
@@ -35,7 +35,7 @@ public class MessageSenderUtil {
                     DatagramPacket receivePacket = new DatagramPacket(new byte[recieveSize], recieveSize);
                     datagramSocket.receive(receivePacket);
                     datagramSocket.close();
-                    callback.send(receivePacket.getData());
+                    callback.call(receivePacket.getData());
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -46,7 +46,6 @@ public class MessageSenderUtil {
 
     public static void tcpSendMessage(byte[] packet,int port, String hostname) {
         try (var socket = new Socket(hostname, port)) {
-            ByteUtil.printBytesAsString(packet);
             socket.getOutputStream().write(packet);
         } catch(Exception e) {
             e.printStackTrace();
@@ -57,19 +56,17 @@ public class MessageSenderUtil {
         byte[] packet,
         int port, 
         String hostname,       
-        MessageCallback<byte[]> callback
+        UniformCallback<byte[]> callback
     ) {
         
         try {
             var socket = new Socket(hostname, port);
-            ByteUtil.printBytesAsString(packet);
             socket.getOutputStream().write(packet);
             new Thread(new Runnable(){
                 public void run(){
                     try {
-                        callback.send(socket.getInputStream().readAllBytes());
+                        callback.call(socket.getInputStream().readAllBytes());
                         socket.close();
-                        System.out.println("sendign back");
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();

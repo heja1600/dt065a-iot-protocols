@@ -6,9 +6,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.HashMap;
 
-import listener.Callback;
 import listener.ClientConnectListener;
-import listener.MessageReceiverListener;
+import listener.ClientConnectionListener;
+import listener.UniformCallback;
 import parser.MessageParser;
 
 public class UDPMessageReceiver<Message> extends MessageReceiver<UDPMessageReceiver<Message>, Message> {
@@ -17,7 +17,7 @@ public class UDPMessageReceiver<Message> extends MessageReceiver<UDPMessageRecei
     DatagramPacket recievePacket;
     ClientConnectListener<Message> clientConnectListener;
 
-    HashMap<InetAddress, Callback<Message>> receivers;
+    HashMap<InetAddress, UniformCallback<Message>> receivers;
 
     public UDPMessageReceiver(MessageParser<Message> parser) {
         super(parser);
@@ -30,13 +30,12 @@ public class UDPMessageReceiver<Message> extends MessageReceiver<UDPMessageRecei
         try {
             datagramSocket.receive(recievePacket);
             byte[] packetData = recievePacket.getData();
-            System.out.println("hej");
             InetAddress clientAddress = recievePacket.getAddress();
             if (!receivers.containsKey(clientAddress)) {
-                MessageReceiverListener<Message> reciever = new MessageReceiverListener<Message>() {
+                ClientConnectionListener<Message> reciever = new ClientConnectionListener<Message>() {
 
                     @Override
-                    public void receivePacket(Callback<Message> callback) {
+                    public void receivePacket(UniformCallback<Message> callback) {
                         callback.call(parser.decode(packetData));
                         receivers.put(clientAddress, callback);
                     }

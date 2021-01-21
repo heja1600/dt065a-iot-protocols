@@ -26,11 +26,20 @@ public class MqttConnectControlPacket extends AbstractMqttControlPacket {
     private String password; 
     
     public MqttConnectControlPacket() {
-        super(MqttControlPacketType.CONNECT);
         protocolName = "MQTT";
         protocolLevel = 4; // 3.1.1
         keepAlive = 60;
         connectFlag = new MqttConnectFlag();
+    }
+
+    @Override
+    public MqttControlPacketType getType() {
+        return MqttControlPacketType.CONNECT;
+    }
+
+    @Override
+    public int getFixedHeaderFlags() {
+        return 0;
     }
 
     public MqttConnectFlag getConnectFlag() {

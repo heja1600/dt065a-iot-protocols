@@ -1,7 +1,6 @@
 package listener;
 
-public interface ClientConnectionListener<Message> {
-    void receivePacket(Callback<Message> callback);
+public interface ClientConnectionListener<Message> extends ClientSendEmitter<Message> {
+    void receivePacket(UniformCallback<Message> callback);
     void close();
-    void send(Message message);
 }

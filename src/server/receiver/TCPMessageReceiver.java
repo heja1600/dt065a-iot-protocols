@@ -7,8 +7,8 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import listener.Callback;
-import listener.MessageReceiverListener;
+import listener.ClientConnectionListener;
+import listener.UniformCallback;
 import parser.MessageParser;
 
 public class TCPMessageReceiver<Message> extends MessageReceiver<TCPMessageReceiver<Message>, Message> {
@@ -18,7 +18,6 @@ public class TCPMessageReceiver<Message> extends MessageReceiver<TCPMessageRecei
 
     public TCPMessageReceiver(MessageParser<Message> parser) {
         super(parser);
-
     }
 
     
@@ -29,9 +28,9 @@ public class TCPMessageReceiver<Message> extends MessageReceiver<TCPMessageRecei
             OutputStream outputStream = socket.getOutputStream();
             InputStream inputStream = socket.getInputStream();
 
-            MessageReceiverListener<Message> connectionReceiver = new MessageReceiverListener<>() {
+            ClientConnectionListener<Message> connectionReceiver = new ClientConnectionListener<>() {
                 @Override
-                public void receivePacket(Callback<Message> callback) {
+                public void receivePacket(UniformCallback<Message> callback) {
                     new Thread(() -> {
                         while(!socket.isClosed()) {
                             try {

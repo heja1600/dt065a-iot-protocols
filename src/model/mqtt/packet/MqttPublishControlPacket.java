@@ -1,27 +1,80 @@
 package model.mqtt.packet;
 
 import model.mqtt.MqttControlPacketType;
-import model.mqtt.MqttPublishFlag;
+import model.mqtt.MqttPacketIdentifier;
 import model.mqtt.MqttQoS;
 
-public class MqttPublishControlPacket extends AbstractMqttControlPacket {
-    private boolean retain;
+public class MqttPublishControlPacket extends AbstractMqttControlPacket implements MqttPacketIdentifier {
+
+    private int fixedHeaderFlags = 0;
+    private int packetIdentifier;
     private String topic;
-    private MqttPublishFlag connectFlag;
+    private String payload;
 
     public MqttPublishControlPacket() {
-        super(MqttControlPacketType.PUBLISH);
-        retain = false;
-        connectFlag = new MqttPublishFlag();
+        setDUPFlag(false);
+        setRetainFlag(false);
+        setMqttQoS(MqttQoS.AT_MOST_ONCE);
     }
 
-    public MqttPublishFlag getPublishFlag() {
-        if (this.connectFlag == null) {
-            this.connectFlag = new MqttPublishFlag().setDupFlag().setMqttQoS(MqttQoS.AT_MOST_ONCE);
+    public boolean isDUPFlag() {
+        return (fixedHeaderFlags & 0b1000) >> 3 == 1;
+    }
 
-        }
-        return this.connectFlag;
 
+    public MqttPublishControlPacket setDUPFlag(boolean DUPFlag) {
+        fixedHeaderFlags = (DUPFlag ? 0b1000 : 0) & fixedHeaderFlags;
+        return this;
+    }
+    public MqttQoS getMqttQoS() {
+        return MqttQoS.get((fixedHeaderFlags & 0b0110) >> 1);
+    }
+
+    public MqttPublishControlPacket setMqttQoS(MqttQoS mqttQoS) {
+        fixedHeaderFlags = (mqttQoS.get() << 1) & fixedHeaderFlags;
+        return this;
+    }
+
+	public boolean isRetainFlag() {
+		return (fixedHeaderFlags & 1) == 1;
+	}
+
+	public MqttPublishControlPacket setRetainFlag(boolean retainFlag) {
+        fixedHeaderFlags = (retainFlag ? 1 : 0) | fixedHeaderFlags;
+        return this;
+	}
+
+    @Override
+    public MqttControlPacketType getType() {
+        return MqttControlPacketType.PUBLISH;
+    }
+
+    @Override
+    public int getFixedHeaderFlags() {
+        return fixedHeaderFlags;
+    }
+
+    public MqttPublishControlPacket setFixedHeaderFlags(int fixedHeaderFlags) {
+        this.fixedHeaderFlags = fixedHeaderFlags;
+        return this;
+    }
+
+    public int getPacketIdentifier() {
+        return packetIdentifier;
+    }
+
+    public MqttPublishControlPacket setPacketIdentifier(int packetIdentifier) {
+        this.packetIdentifier = packetIdentifier;
+        return this;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public MqttPublishControlPacket setPayload(String payload) {
+        this.payload = payload;
+        return this;
     }
 
     public String getTopic() {
@@ -33,13 +86,18 @@ public class MqttPublishControlPacket extends AbstractMqttControlPacket {
         return this;
     }
 
-    public boolean getRetain() {
-        return retain;
-    }
 
-    public MqttPublishControlPacket setRetain() {
-        this.retain = true;
-        return this;
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("- Mqtt Publish Control Packet" + "\n");
+        builder.append("DUP-flag: " + isDUPFlag() + "\n");
+        builder.append("Retain-flag: " + isRetainFlag() + "\n");
+        builder.append("QoS: " + getMqttQoS() + "\n");
+        builder.append("Packet identifier: " + getPacketIdentifier() + "\n" );
+        builder.append("Payload: " + getPayload() + "\n" );
+        builder.append("Topic: " + getTopic() + "\n" );
+        return builder.toString();
     }
 
 }

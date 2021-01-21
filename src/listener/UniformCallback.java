@@ -1,5 +1,5 @@
 package listener;
 
-public interface Callback<T> {
+public interface UniformCallback<T> {
     void call(T t);
 }

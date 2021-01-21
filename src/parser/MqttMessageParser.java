@@ -7,16 +7,29 @@ import java.io.IOException;
 import model.mqtt.MqttConnectFlag;
 import model.mqtt.MqttControlPacketType;
 import model.mqtt.MqttMessage;
+import model.mqtt.MqttPacketIdentifier;
 import model.mqtt.MqttQoS;
+import model.mqtt.MqttTopic;
 import model.mqtt.packet.AbstractMqttControlPacket;
 import model.mqtt.packet.MqttConnAckControlPacket;
 import model.mqtt.packet.MqttConnectControlPacket;
+import model.mqtt.packet.MqttDisconnectControlPacket;
+import model.mqtt.packet.MqttPingRequestPacket;
+import model.mqtt.packet.MqttPingResponsePacket;
+import model.mqtt.packet.MqttPubAckControlPacket;
+import model.mqtt.packet.MqttPublishControlPacket;
+import model.mqtt.packet.MqttSubAckControlPacket;
+import model.mqtt.packet.MqttSubscribeControlPacket;
+import model.mqtt.packet.MqttUnsubAckControlPacket;
+import model.mqtt.packet.MqttUnsubscribeControlPacket;
 import util.ByteUtil;
 
 public class MqttMessageParser implements MessageParser<MqttMessage> {
 
     @Override
     public MqttMessage decode(byte[] buffer) {
+  
+
         MqttMessage message = new MqttMessage();
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer)) {
 
@@ -24,26 +37,41 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
 
             // Get type
             MqttControlPacketType mqttControlPacketType = MqttControlPacketType.get((firstByte & 0xf0) >> 4);
-            System.out.println(mqttControlPacketType);
             // If its a publish message, set otherwise reserved bits
-            if (message.getMqttControlPacketType() == MqttControlPacketType.PUBLISH) {
-                // Set DUP flag
-                message.setDUPFlag(((firstByte & 0x8) >> 3) == 1);
-
-                // Set Quality of Service (QOS) level
-                message.setMqttQoS(MqttQoS.get(((firstByte) & 0x6) >> 1));
-
-                // Set Retain
-                message.setRetainFlag((firstByte & 0x1) == 1);
-            }
+            
             // set remaining length
             Integer remainingLength = byteArrayInputStream.read();
+     
             message.setRemainingLength(remainingLength);
 
             AbstractMqttControlPacket packet;
             switch (mqttControlPacketType) {
                 case CONNECT: {
-                    packet = decodePacket(byteArrayInputStream, remainingLength);
+                    packet = decodeConnectControlPacket(byteArrayInputStream, remainingLength);
+                    break;
+                }
+                case DISCONNECT: {
+                    packet = new MqttDisconnectControlPacket();
+                    break;
+                }
+                case PUBLISH: {
+                    packet = decodePublishControlPacket(byteArrayInputStream, remainingLength, firstByte);
+                    break;
+                }
+                case SUBCRIBE: {
+                    packet = decodeSubscribeControlPacket(byteArrayInputStream, remainingLength);
+                    break;
+                }
+                case UNSUBSCRIBE: {
+                    packet = decodeUnsubscribeControlPacket(byteArrayInputStream, remainingLength);
+                    break;
+                }
+                case PINGREQ: {
+                    packet = new MqttPingRequestPacket();
+                    break;
+                }
+                case PINGRESP: {
+                    packet = new MqttPingResponsePacket();
                     break;
                 }
                 default: {
@@ -51,6 +79,7 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
                 }
             }
             message.setPacket(packet);
+      
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -58,13 +87,98 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
         return message;
     }
 
-    private MqttConnectControlPacket decodePacket(ByteArrayInputStream byteArrayInputStream,
-            Integer remainingLength) throws Exception {
+    private MqttUnsubscribeControlPacket decodeUnsubscribeControlPacket(
+        ByteArrayInputStream byteArrayInputStream, 
+        Integer remainingLength
+    ) throws IOException {
+        MqttUnsubscribeControlPacket packet = new MqttUnsubscribeControlPacket();
+        
+        // Get packet identifier
+        packet.setPacketIdentifier(decodePacketIdentifier(byteArrayInputStream, packet));
+        remainingLength -= 2;
+
+         /** Set topics */
+        while(remainingLength > 0) {
+            var length = twoBytesToInt(byteArrayInputStream);
+            String topic = ByteUtil.byteArrayToString(
+                byteArrayInputStream.readNBytes(
+                    length
+                )
+            );
+            remainingLength -= (length + 2);
+            packet.addTopic(topic);
+        }
+
+        return packet;
+    }
+
+    private MqttPublishControlPacket decodePublishControlPacket(
+        ByteArrayInputStream byteArrayInputStream, 
+        Integer remainingLength,
+        int firstByte
+    ) throws IOException {
+        MqttPublishControlPacket packet = new MqttPublishControlPacket()
+            .setDUPFlag(((firstByte & 0b1000) >> 3) == 1)
+            // Set Quality of Service (QOS) level
+            .setMqttQoS(MqttQoS.get((firstByte & 0b0110) >> 1))
+            // Set Retain
+            .setRetainFlag((firstByte & 1) == 1);
+
+        // Set topic
+        var length = twoBytesToInt(byteArrayInputStream);
+        var topic =  ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(length));
+  
+        packet.setTopic(topic);
+        remainingLength -= (length + 2);
+        
+        // Set packet identifier
+        if(packet.getMqttQoS() == MqttQoS.AT_LEAST_ONCE || packet.getMqttQoS() == MqttQoS.EXACLY_ONCE) {
+            packet.setPacketIdentifier(decodePacketIdentifier(byteArrayInputStream, packet));
+            remainingLength-=2;
+        }
+        
+        if(remainingLength > 0) {
+            packet.setPayload(ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(remainingLength)));
+        }
+        return packet;
+    }
+
+    private MqttSubscribeControlPacket decodeSubscribeControlPacket(
+        ByteArrayInputStream byteArrayInputStream, 
+        Integer remainingLength
+    ) throws IOException {
+
+        MqttSubscribeControlPacket packet = new MqttSubscribeControlPacket();
+
+        /** Set packet identifier */
+        packet.setPacketIdentifier(decodePacketIdentifier(byteArrayInputStream, packet));
+        remainingLength -= 2;
+
+        /** Set topics */
+        while(remainingLength > 0) {
+            var length = twoBytesToInt(byteArrayInputStream);
+            String topic = ByteUtil.byteArrayToString(
+                byteArrayInputStream.readNBytes(
+                    length
+                )
+            );
+            MqttQoS mqttQoS = MqttQoS.get(byteArrayInputStream.read());
+            remainingLength -= (length + 3);
+            packet.addTopic(new MqttTopic(topic, mqttQoS));
+        }
+
+        return packet;
+    }
+    
+    private MqttConnectControlPacket decodeConnectControlPacket(
+        ByteArrayInputStream byteArrayInputStream,
+        Integer remainingLength
+    ) throws Exception {
 
         MqttConnectControlPacket packet = new MqttConnectControlPacket();
 
         /** Set protocolname from variable header */
-        byte[] variableHeader = byteArrayInputStream.readNBytes(getLength(byteArrayInputStream));
+        byte[] variableHeader = byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream));
         packet.setProtocolName(new String(variableHeader));
 
         /** Set protocol level */
@@ -80,70 +194,89 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
             
         if(packet.getConnectFlag().isCleanSessionFlag()) {
             packet.setClientIdentifier(
-                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(getLength(byteArrayInputStream)))
+                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream)))
             );
         }
 
         if(packet.getConnectFlag().isWillFlag()) {
             packet.setWillTopic(
-                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(getLength(byteArrayInputStream)))
+                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream)))
             );
             packet.setWillMessage(
-                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(getLength(byteArrayInputStream)))
+                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream)))
             );
         }
 
         if(packet.getConnectFlag().isUserNameFlag()) {
             packet.setUsername(
-                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(getLength(byteArrayInputStream)))
+                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream)))
             );
         }
 
         if(packet.getConnectFlag().isPasswordFlag()) {
             packet.setPassword(
-                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(getLength(byteArrayInputStream)))
+                ByteUtil.byteArrayToString(byteArrayInputStream.readNBytes(twoBytesToInt(byteArrayInputStream)))
             );
         }
         
         return packet;
     }
 
-    private int getLength(ByteArrayInputStream byteArrayInputStream) throws IOException {
-        return (int) byteArrayInputStream.readNBytes(2)[1];
+    private int twoBytesToInt(ByteArrayInputStream byteArrayInputStream) throws IOException {
+        return (byteArrayInputStream.read() << 8) | byteArrayInputStream.read();
     }
     
+    private int decodePacketIdentifier(ByteArrayInputStream byteArrayInputStream, MqttPacketIdentifier mqttPacketIdentifier) {
+        return (byteArrayInputStream.read() << 8) | byteArrayInputStream.read();
+    }
 	@Override
 	public byte[] encode(MqttMessage message) {
         byte [] buffer = null;
 		try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 
             // Set Type
-            int firstByte = (message.getMqttControlPacketType().get() & 0xf) << 4;
-
-            // Set DUP flag
-            firstByte = (firstByte | ((message.isDUPFlag() ? 1 : 0) << 3));
-
-            // Set Quality of Service (QOS) level
-            firstByte = firstByte | (message.getMqttQoS().get() << 1);
-
-            // Set Retain
-            firstByte =  firstByte | (message.isRetainFlag() ? 1 : 0);
-
-            byteArrayOutputStream.write(firstByte);
+            int firstByte = message.getMqttControlPacketType().get() << 4;
+          
+            firstByte = firstByte | message.getPacket().getFixedHeaderFlags();
+            
+            byteArrayOutputStream.write(firstByte & 0xff);
             
             byte [] extraBuffer = null;
             
 
             switch(message.getMqttControlPacketType()) {
                 case CONNECT: {
-                    extraBuffer = encodePacket((MqttConnectControlPacket)message.getPacket());
+                    extraBuffer = encodePacket((MqttConnectControlPacket) message.getPacket());
                     break;
                 }
                 case CONNACK: {
-                    extraBuffer = encodePacket((MqttConnAckControlPacket)message.getPacket());
+                    extraBuffer = encodePacket((MqttConnAckControlPacket) message.getPacket());
+                    break;
+                }
+                case SUBACK: {
+                    extraBuffer = encodePacket((MqttSubAckControlPacket) message.getPacket());
+                    break;
+                }
+                case PUBACK: {
+                    extraBuffer = encodePacket((MqttPubAckControlPacket) message.getPacket());
+                    break;
+                }
+                case UNSUBACK: {
+                    extraBuffer = encodePacket((MqttUnsubAckControlPacket) message.getPacket());
+                    break;
+                }
+                case PUBLISH: {
+                    extraBuffer = encodePacket((MqttPublishControlPacket) message.getPacket());
+                    break;
+                }
+                // following packets has no extra buffer
+                case PINGREQ:
+                case PINGRESP: 
+                case DISCONNECT: {
                     break;
                 }
                 default: {
+                    System.out.println("Encoder doesnt support packet: " + message.getMqttControlPacketType() + " yet.");
                     break;
                 }
             }
@@ -151,16 +284,19 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
                 message.setRemainingLength(extraBuffer.length);
                 byteArrayOutputStream.write(message.getRemainingLength());
                 byteArrayOutputStream.write(extraBuffer);
+            } else {
+                byteArrayOutputStream.write(0);
             }
 
             buffer = byteArrayOutputStream.toByteArray();
+ 
+
         } catch(Exception e) {
             e.printStackTrace();
         }
-        ByteUtil.printBytesAsString(buffer);
 		return buffer;
     }   
-    
+
     /**
      * Encoder for connect message
      * @param message
@@ -231,7 +367,7 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
     }
 
     /**
-     * Encoder for connect message
+     * Encoder for Connect Acknownledgement message
      * @param message
      * @param byteArrayOutputStream
      */
@@ -250,5 +386,109 @@ public class MqttMessageParser implements MessageParser<MqttMessage> {
             e.printStackTrace();
         }
         return buffer;
+    }
+
+    /**
+     * Encoder for Subscribe Ack message
+     * @param message
+     * @param byteArrayOutputStream
+     */
+    private byte [] encodePacket(MqttSubAckControlPacket packet) {
+        byte [] buffer = null;
+    	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+           
+            // Set packet identifier
+            encodePacketIdentifier(byteArrayOutputStream, packet);
+            // Set Payload
+            packet.getQoSs().forEach(qoS -> {
+                byteArrayOutputStream.write(qoS.get());
+            });
+            
+            buffer = byteArrayOutputStream.toByteArray();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
+
+    /**
+     * Encoder for Publish Ack message
+     * @param message
+     * @param byteArrayOutputStream
+     */
+    private byte [] encodePacket(MqttPubAckControlPacket packet) {
+        byte [] buffer = null;
+    	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+           
+            // Set packet identifier
+            encodePacketIdentifier(byteArrayOutputStream, packet);
+
+            buffer = byteArrayOutputStream.toByteArray();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
+
+    /**
+     * Encoder for Publish Ack message
+     * @param message
+     * @param byteArrayOutputStream
+     */
+    private byte [] encodePacket(MqttUnsubAckControlPacket packet) {
+        byte [] buffer = null;
+    	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+           
+            // Set packet identifier
+            encodePacketIdentifier(byteArrayOutputStream, packet);
+
+            buffer = byteArrayOutputStream.toByteArray();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
+
+    /**
+     * Encoder for Publish Ack message
+     * @param message
+     * @param byteArrayOutputStream
+     */
+    private byte [] encodePacket(MqttPublishControlPacket packet) {
+        byte [] buffer = null;
+    	try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+           
+
+             /** Set length and topic*/
+            var topic = packet.getTopic();
+            writeTwoBytes(byteArrayOutputStream, topic == null ? 0 : topic.length());
+            
+            if(topic != null) {
+                byteArrayOutputStream.writeBytes(topic.getBytes());
+            }
+
+            if(packet.getMqttQoS() == MqttQoS.AT_LEAST_ONCE || packet.getMqttQoS() == MqttQoS.EXACLY_ONCE) {
+                // Set packet identifier
+                encodePacketIdentifier(byteArrayOutputStream, packet);
+            }
+
+            // Set payload
+            byteArrayOutputStream.write(packet.getPayload().getBytes());
+
+            buffer = byteArrayOutputStream.toByteArray();
+            
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
+
+    private void encodePacketIdentifier(ByteArrayOutputStream byteArrayOutputStream, MqttPacketIdentifier packetIdentifier) {
+        writeTwoBytes(byteArrayOutputStream, packetIdentifier.getPacketIdentifier());
+    }
+
+    private void writeTwoBytes(ByteArrayOutputStream byteArrayOutputStream, int number) {
+        byteArrayOutputStream.write((number & 0xff00) >> 8);
+        byteArrayOutputStream.write(number & 0xff);
     }
 }

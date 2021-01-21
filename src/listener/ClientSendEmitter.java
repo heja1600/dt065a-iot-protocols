@@ -1,5 +1,5 @@
 package listener;
 
-public interface MessageCallback<Message> {
+public interface ClientSendEmitter<Message> {
     void send(Message message);
-}   
+}
