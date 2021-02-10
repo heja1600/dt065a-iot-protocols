@@ -1,0 +1,11 @@
+<ul class="navbar">
+  <li class="font-thin--l margin-lr--m" (click)="operationPage = 0">
+    Subscribe
+  </li>
+  <li class="font-thin--l margin-lr--m" (click)="operationPage = 1">Publish</li>
+</ul>
+
+<span [ngSwitch]="operationPage">
+  <app-subscribe *ngSwitchCase="0"></app-subscribe>
+  <app-publish *ngSwitchCase="1"></app-publish>
+</span>

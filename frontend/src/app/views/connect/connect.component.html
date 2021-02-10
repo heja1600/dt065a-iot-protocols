@@ -1,0 +1,15 @@
+<div class="connect__container">
+  <h1 class="font-thin--l connect__header padding-tb--l">Mqtt Connector v3</h1>
+
+  <form [formGroup]="connectFormGroup" (ngSubmit)="onConnect()">
+    <div class="connect_inputContainer">
+      <input formControlName="connectUrl" fp class="margin-r--m" />
+      <app-button
+        class="connect__button"
+        type="submit"
+        [disabled]="!connectFormGroup.valid"
+        >Connect</app-button
+      >
+    </div>
+  </form>
+</div>
