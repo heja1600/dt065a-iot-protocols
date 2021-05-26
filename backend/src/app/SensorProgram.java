@@ -66,7 +66,7 @@ public class SensorProgram implements ServerListener<CoapMessage>, MessageHandle
                         .setPayload(dtf.format(now));
                 } else if(CoapUtil.isUrl(message, "pi", "temperature")) {
                     try {
-                        int temperature = Integer.parseInt(HttpUtil.plainTextHttpGetRequest("http://" + ServerConfig.PI_URI + "/temperature"));
+                        float temperature = Float.parseFloat(HttpUtil.plainTextHttpGetRequest("http://" +ServerConfig.PI_URI + "/temperature"));
 
                         return new CoapMessage()
                             .setCode(CoapCode.VALID)
@@ -78,7 +78,7 @@ public class SensorProgram implements ServerListener<CoapMessage>, MessageHandle
                 }
                 else if(CoapUtil.isUrl(message, "pi", "humidity")) {
                     try {
-                        int humidity = Integer.parseInt(HttpUtil.plainTextHttpGetRequest("http://" + ServerConfig.PI_URI + "/humidity"));
+                        float humidity = Float.parseFloat(HttpUtil.plainTextHttpGetRequest("http://" +ServerConfig.PI_URI + "/humidity"));
 
                         return new CoapMessage()
                             .setCode(CoapCode.VALID)
