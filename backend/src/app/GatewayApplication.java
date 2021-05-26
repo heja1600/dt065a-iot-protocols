@@ -11,7 +11,8 @@ import src.server.MqttBrokerServer;
 
 public class GatewayApplication extends Thread implements MqttClientListener{
 
-    String hostname = "192.168.43.75"; 
+    String coapHostname = "192.168.43.75"; 
+    String mqttHostname = "localhost";
     MqttBrokerServer mqttServer;
     CoapClientApplication coapClientApplication;
     SensorProgram sensorProgram;
@@ -26,7 +27,7 @@ public class GatewayApplication extends Thread implements MqttClientListener{
  
     public GatewayApplication() throws Exception {
         mqttServer = new MqttBrokerServer();
-        coapClientApplication = new CoapClientApplication(hostname, ServerConfig.COAP_SERVER_PORT, ServerType.UDP);
+        coapClientApplication = new CoapClientApplication(coapHostname, ServerConfig.COAP_SERVER_PORT, ServerType.UDP);
         // sensorProgram = new SensorProgram(); // ska ej vara här egentligen
         start();
     }
@@ -46,7 +47,7 @@ public class GatewayApplication extends Thread implements MqttClientListener{
 
     @Override
     public void run() {
-        mqttClient = new MqttClientApplication(hostname, ServerConfig.MQTT_SERVER_PORT).setListener(this).connect();
+        mqttClient = new MqttClientApplication(mqttHostname, ServerConfig.MQTT_SERVER_PORT).setListener(this).connect();
         while(runGatewayApplication) {
             
         }   
