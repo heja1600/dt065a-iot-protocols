@@ -77,7 +77,7 @@ public class UDPMessageReceiver<Message> extends MessageReceiver<UDPMessageRecei
     @Override
     protected void onInit() {
         try {
-            datagramSocket = new DatagramSocket(port);
+            datagramSocket = new DatagramSocket(port, InetAddress.getByName("0.0.0.0"));
             recievePacket = new DatagramPacket(buffer, buffer.length);
 
         } catch(Exception e) {

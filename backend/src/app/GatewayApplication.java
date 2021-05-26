@@ -11,7 +11,7 @@ import src.server.MqttBrokerServer;
 
 public class GatewayApplication extends Thread implements MqttClientListener{
 
-    String hostname = "localhost";
+    String hostname = "192.168.43.75"; 
     MqttBrokerServer mqttServer;
     CoapClientApplication coapClientApplication;
     SensorProgram sensorProgram;
@@ -27,7 +27,7 @@ public class GatewayApplication extends Thread implements MqttClientListener{
     public GatewayApplication() throws Exception {
         mqttServer = new MqttBrokerServer();
         coapClientApplication = new CoapClientApplication(hostname, ServerConfig.COAP_SERVER_PORT, ServerType.UDP);
-        sensorProgram = new SensorProgram(); // ska ej vara här egentligen
+        // sensorProgram = new SensorProgram(); // ska ej vara här egentligen
         start();
     }
 
@@ -64,21 +64,34 @@ public class GatewayApplication extends Thread implements MqttClientListener{
                 while(runClient) {
                     try {
                         sleep(2500);
-                        coapClientApplication.sendMessage(
-                            new CoapMessage()
-                                .setCode(CoapCode.GET)
-                                .addOption(new CoapOptionUriPath("pi"))
-                                .addOption(new CoapOptionUriPath("time")), 
-                            response -> {
-                                System.out.println("response: " + response);
-                                
-                                try {
-                                    mqttClient.publish("pi/time", response.getPayload());
-                                } catch (Exception e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
-                            });
+
+
+
+                        for(String messageUri: new String[]{"pi/temperature", "pi/time", "pi/humidity"}) {
+                            CoapMessage coapMessage =  new CoapMessage()
+                                .setCode(CoapCode.GET);
+
+                            for(String subMessageUri: messageUri.split("/")) {
+                                coapMessage.addOption(new CoapOptionUriPath(subMessageUri));
+                            }
+
+                            coapClientApplication.sendMessage(
+                                coapMessage,
+                                response -> {
+                                    if(response.getCode() == CoapCode.VALID) {
+                                        System.out.println("response: " + response);
+                                    
+                                        try {
+                                            mqttClient.publish(messageUri, response.getPayload());
+                                        } catch (Exception e) {
+                                            // TODO Auto-generated catch block
+                                            e.printStackTrace();
+                                        }
+                                    } else {
+                                        System.out.println("received bad response from sensor program");
+                                    }
+                                });
+                        }
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
