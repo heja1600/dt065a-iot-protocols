@@ -35,7 +35,7 @@ public class MqttClientApplication implements ClientConnectListener<MqttMessage>
             }
 
             @Override
-            public void onMqttClientMessage(MqttMessage message) {
+            public void onMqttClientMessageReceived(MqttMessage message) {
                 // TODO Auto-generated method stub
                 
             }
@@ -49,6 +49,12 @@ public class MqttClientApplication implements ClientConnectListener<MqttMessage>
                     e.printStackTrace();
                 }
                 // TODO Auto-generated method stub
+            }
+
+            @Override
+            public void onMqttClientMessageSent(MqttMessage message) {
+                // TODO Auto-generated method stub
+                
             }
             
         });
@@ -82,8 +88,8 @@ public class MqttClientApplication implements ClientConnectListener<MqttMessage>
         MqttMessage message =  new MqttMessage().setPacket(
             new MqttSubscribeControlPacket().addTopic(new MqttTopic().setTopic(topic))
         );
-
         connection.send(message);
+        listener.onMqttClientMessageSent(message);
     }
 
     public void publish(String topic, String payload) throws Exception {
@@ -100,10 +106,13 @@ public class MqttClientApplication implements ClientConnectListener<MqttMessage>
         
 
         connection.send(message);
+        listener.onMqttClientMessageSent(message);
     }
 
     public void ping() {
-        connection.send(new MqttMessage().setPacket(new MqttPingRequestPacket()));
+        MqttMessage message = new MqttMessage().setPacket(new MqttPingRequestPacket());
+        connection.send(message);
+        listener.onMqttClientMessageSent(message);
     }
 
     @Override
@@ -161,7 +170,7 @@ public class MqttClientApplication implements ClientConnectListener<MqttMessage>
                     break;
             }
             if(listener != null) {
-                listener.onMqttClientMessage(message);
+                listener.onMqttClientMessageReceived(message);
             }
 
         }); 

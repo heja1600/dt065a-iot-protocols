@@ -19,7 +19,7 @@ class MessageWidget(QtWidgets.QWidget):
         self.on_click = on_click
         self.message = message
         client_id=str(message["client"]._client_id)
-        msg_count=int(message["userdata"].msg_count) if message["userdata"] != None else str(index)
+        msg_count=str(message["userdata"].msg_count) if message["userdata"] != None else str(index)
         self.msg_count = QtWidgets.QLabel()
         self.msg_count.setText(msg_count)
 
@@ -219,7 +219,7 @@ class Ui_MainWindow(object):
         self.publish_input.clear()
         self.publish_input.addItems(self.topics)
         self.subscription_input.clear()
-        self.subscription_input.addItems(self.topics + ["pi/time"])
+        self.subscription_input.addItems(self.topics + ["pi/time", "pi/temperature", "pi/humidity", "pi/message"])
 
     def publish(self):
         payload = self.publish_text.toPlainText() or ""

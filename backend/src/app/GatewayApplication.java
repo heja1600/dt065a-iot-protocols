@@ -5,8 +5,11 @@ import src.listener.MqttClientListener;
 import src.model.coap.CoapCode;
 import src.model.coap.CoapMessage;
 import src.model.coap.option.CoapOptionUriPath;
+import src.model.mqtt.MqttControlPacketType;
 import src.model.mqtt.MqttMessage;
+import src.model.mqtt.packet.MqttPublishControlPacket;
 import src.server.CoapServer.ServerType;
+import src.util.MeasurementLogger;
 import src.server.MqttBrokerServer;
 
 public class GatewayApplication extends Thread implements MqttClientListener{
@@ -20,7 +23,8 @@ public class GatewayApplication extends Thread implements MqttClientListener{
     
     boolean runClient = true;
     boolean runGatewayApplication = true;
-    
+    MeasurementLogger mqttClientMqttBroker = new MeasurementLogger("mqttclient_mqttbroker.txt", 1);
+    MeasurementLogger coapClientCoapServer = new MeasurementLogger("coapclient_coapserver.txt", 1);
     public static void main(String [] args ) throws Exception {
         new GatewayApplication();
     }
@@ -39,15 +43,22 @@ public class GatewayApplication extends Thread implements MqttClientListener{
     }
 
     @Override
-    public void onMqttClientMessage(MqttMessage message) {
-        // TODO Auto-generated method stub
-        
+    public void onMqttClientMessageReceived(MqttMessage message) {
+        if(message.getMqttControlPacketType() == MqttControlPacketType.PINGRESP) {
+            mqttClientMqttBroker.endClock();
+        }
     }
 
 
     @Override
     public void run() {
         mqttClient = new MqttClientApplication(mqttHostname, ServerConfig.MQTT_SERVER_PORT).setListener(this).connect();
+        try {
+            // mqttClient.subscribe("pi/humidity");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         while(runGatewayApplication) {
             
         }   
@@ -67,8 +78,27 @@ public class GatewayApplication extends Thread implements MqttClientListener{
                         sleep(2500);
 
 
+                        coapClientCoapServer.startClock();
+                        coapClientApplication.sendMessage(
+                             new CoapMessage().setCode(CoapCode.GET).addOption(new CoapOptionUriPath("pi")).addOption(new CoapOptionUriPath("humidity")),
+                            response -> {
+                                coapClientCoapServer.endClock();
+                                if(response.getCode() == CoapCode.VALID) {
+                                    System.out.println("response: " + response);
+                                  
+                                    try {
+                                        mqttClientMqttBroker.startClock();
+                                        mqttClient.publish("pi/humidity", response.getPayload());
+                                    } catch (Exception e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    System.out.println("received bad response from sensor program");
+                                }
+                            });
 
-                        for(String messageUri: new String[]{"pi/temperature", "pi/time", "pi/humidity"}) {
+                        for(String messageUri: new String[]{"pi/temperature", "pi/time",}) {
                             CoapMessage coapMessage =  new CoapMessage()
                                 .setCode(CoapCode.GET);
 
@@ -81,7 +111,7 @@ public class GatewayApplication extends Thread implements MqttClientListener{
                                 response -> {
                                     if(response.getCode() == CoapCode.VALID) {
                                         System.out.println("response: " + response);
-                                    
+                                      
                                         try {
                                             mqttClient.publish(messageUri, response.getPayload());
                                         } catch (Exception e) {
@@ -100,6 +130,15 @@ public class GatewayApplication extends Thread implements MqttClientListener{
                 }
             }
            }).start();
+        
+    }
+
+    @Override
+    public void onMqttClientMessageSent(MqttMessage message) {
+        if(message.getMqttControlPacketType() == MqttControlPacketType.PINGREQ) {
+            mqttClientMqttBroker.startClock();
+        }
+        // TODO Auto-generated method stub
         
     }
 }
