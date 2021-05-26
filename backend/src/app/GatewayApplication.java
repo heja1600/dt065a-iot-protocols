@@ -59,6 +59,7 @@ public class GatewayApplication extends Thread implements MqttClientListener{
         // TODO Auto-generated method stub
         
         (new Thread() {
+            @Override
             public void run() {
                 while(runClient) {
                     try {
